@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import type { ReactNode } from "react";
 import {
   ArrowLeft,
   Camera,
@@ -46,7 +46,7 @@ export default function JobDetailPage() {
   const me = useMe();
   const router = useRouter();
   const [toast, showToast] = useToast();
-  const [created] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("created"));
+  const created = useSearchParams().has("created");
 
   const b = jobBundle(state, id);
   if (!b) {

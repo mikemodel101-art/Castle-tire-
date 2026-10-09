@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ChevronLeft, MessageSquare, Phone, Search, Send } from "lucide-react";
 import { CastleLogo } from "@/components/brand";
@@ -17,11 +18,14 @@ const QUICK = [
 ];
 
 export default function MessagesPage() {
+  const initialCustomer = useSearchParams().get("c");
+  return <MessagesView key={initialCustomer ?? ""} initialCustomer={initialCustomer} />;
+}
+
+function MessagesView({ initialCustomer }: { initialCustomer: string | null }) {
   const state = useShop();
   const me = useMe();
-  const [selected, setSelected] = useState<string | null>(() =>
-    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("c"),
-  );
+  const [selected, setSelected] = useState<string | null>(initialCustomer);
   const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
   const origin = typeof window === "undefined" ? "" : window.location.origin;

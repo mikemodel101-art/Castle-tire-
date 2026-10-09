@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState, type ChangeEvent } from "react";
 import { Camera, CheckCircle2, Image as ImageIcon, Loader2, Play, Trash2, Upload, Video, X } from "lucide-react";
 import { compressImage } from "@/components/photo-capture";
@@ -13,17 +14,20 @@ type TypeFilter = "all" | "photo" | "video";
 const ITEMS: Partial<Record<MediaSection, string[]>> = { tires: [...CORNERS], brakes: ["front", "rear"] };
 
 export default function MediaPage() {
+  const params = useSearchParams();
+  return <MediaLibrary key={params.toString()} initialJob={params.get("job")} initialSection={params.get("section")} />;
+}
+
+function MediaLibrary({ initialJob, initialSection }: { initialJob: string | null; initialSection: string | null }) {
   const state = useShop();
   const me = useMe();
-  const params = typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
-  const initialSection = params.get("section");
   const [section, setSection] = useState<MediaSection | "all">(
     MEDIA_SECTIONS.includes(initialSection as MediaSection) ? (initialSection as MediaSection) : "all",
   );
-  const [jobFilter, setJobFilter] = useState<string>(params.get("job") ?? "all");
+  const [jobFilter, setJobFilter] = useState<string>(initialJob ?? "all");
   const [type, setType] = useState<TypeFilter>("all");
   const [open, setOpen] = useState<Media | null>(null);
-  const [upJob, setUpJob] = useState<string>(params.get("job") ?? state.jobs.find((j) => j.date === state.anchorDay)?.id ?? state.jobs[0]?.id ?? "");
+  const [upJob, setUpJob] = useState<string>(initialJob ?? state.jobs.find((j) => j.date === state.anchorDay)?.id ?? state.jobs[0]?.id ?? "");
   const [upSection, setUpSection] = useState<MediaSection>(section === "all" ? "tires" : section);
   const [upItem, setUpItem] = useState<string>("");
   const [busy, setBusy] = useState(false);

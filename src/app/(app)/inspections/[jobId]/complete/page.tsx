@@ -38,7 +38,7 @@ export default function InspectionCompletePage() {
     );
   }
 
-  const techName = byId(state.team, inspection.techId)?.name ?? "Technician";
+  const techName = byId(state.team, inspection.techId)?.name.split(" ")[0] ?? "Technician";
   const overall = overallLight(inspection, s);
 
   return (

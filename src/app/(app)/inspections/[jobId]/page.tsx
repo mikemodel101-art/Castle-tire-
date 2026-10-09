@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { ArrowLeft, Camera, Check, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, FileText } from "lucide-react";
 import { BrakeDisc, CarTopView, ShopIcon } from "@/components/brand";
@@ -89,10 +89,9 @@ export default function InspectionWizardPage() {
   const state = useShop();
   const me = useMe();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(() => {
-    if (typeof window === "undefined") return 0;
-    const q = new URLSearchParams(window.location.search).get("step");
-    const i = STEPS.findIndex((x) => x.id === q);
+    const i = STEPS.findIndex((x) => x.id === searchParams.get("step"));
     return i >= 0 ? i : 0;
   });
   const [capture, setCapture] = useState<CaptureTarget | null>(null);

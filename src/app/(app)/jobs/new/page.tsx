@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
 import { ArrowLeft, Car, Check, ClipboardList, Contact, Loader2, UserRound, X } from "lucide-react";
 import { Card, PlateBadge, inputCls, labelCls } from "@/components/ui";
@@ -26,14 +26,18 @@ type Form = {
 };
 
 export default function NewVehiclePage() {
+  // useSearchParams reflects the new URL during in-app navigation (window.location may still be the old one).
+  const vehicleId = useSearchParams().get("vehicle") ?? "";
+  return <NewVehicleForm key={vehicleId} vehicleId={vehicleId} />;
+}
+
+function NewVehicleForm({ vehicleId }: { vehicleId: string }) {
   const state = useShop();
   const me = useMe();
   const router = useRouter();
 
   const [linked, setLinked] = useState<{ customerId?: string; vehicleId?: string }>(() => {
-    if (typeof window === "undefined") return {};
-    const vid = new URLSearchParams(window.location.search).get("vehicle");
-    const v = vid ? state.vehicles.find((x) => x.id === vid) : undefined;
+    const v = vehicleId ? state.vehicles.find((x) => x.id === vehicleId) : undefined;
     return v ? { customerId: v.customerId, vehicleId: v.id } : {};
   });
   const [form, setForm] = useState<Form>(() => {
