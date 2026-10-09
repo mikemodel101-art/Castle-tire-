@@ -70,7 +70,26 @@ Type/lint gates: `npx next typegen` · `npm exec tsc -- --noEmit` · `npm run bu
 2. vercel.com → **Add New → Project** → import it (Next.js auto-detected).
 3. **Add zero environment variables** → **Deploy**.
 
-> **Seen “Ambiguous app routes … /r/[code] … /r/[reportId]”?** Your repo has first-version leftovers from upload-on-top. Delete `src/app/r/[reportId]/`, old `src/components/{job-board,inspection-form,customer-search,share-report,media-library}.tsx`, and `src/db/index.ts`. As a safety net, `next.config.ts` also removes old copies automatically at build time.
+> **Seen “Ambiguous app routes … /r/[code] … /r/[reportId]”?** Your repo has first-version leftovers from upload-on-top. Delete `src/app/r/[reportId]/`, old `src/components/{job-board,inspection-form,customer-search,share-report,media-library}.tsx`, and `src/db/index.ts`. As a safety net, `next.config.ts` also removes recognizable old copies automatically at build time.
+
+### Vercel: `finance.ts` has no exported member `ExpenseCategory`
+
+This is a source-file mismatch, not an installation, database, or cache failure.
+The obsolete `src/lib/finance.ts` imports `ExpenseCategory` and `ExpenseEntry`
+from an older model. The current app uses `ExpenseTransaction`; its finance
+calculations live in `src/lib/insights.ts`. TypeScript checks unused source files
+as well, so that leftover helper alone can fail the deployment.
+
+1. Replace **`next.config.ts`** in GitHub with the current file. It now removes
+   `src/lib/finance.ts` when it detects those retired type imports, before Next.js
+   scans routes or runs TypeScript. A modern finance helper is left untouched.
+2. Recommended: also delete **`src/lib/finance.ts`** from the repository. Uploading
+   new files on top of an old repository does not record file deletions.
+3. Commit and deploy the **new commit**. Redeploying the old failed commit still
+   uses the old cleanup rules. No environment variables are needed.
+
+Do not disable TypeScript checking or add placeholder types to `data.ts`.
+The npm `install-scripts` warnings are not the reported cause of this failure.
 
 Health: `GET /api/health` → `{ "ok": true, "mode": "demo", "database": "none" }`.
 
@@ -102,6 +121,16 @@ Pure saved-data tests (no browser or server required):
 npx --yes esbuild tests/demo-storage.test.ts --bundle --platform=node --format=cjs --outfile=/tmp/castle-demo-tests.cjs
 node --test /tmp/castle-demo-tests.cjs
 ```
+
+Legacy deployment cleanup tests (also no browser or server required):
+
+```bash
+npx --yes esbuild tests/legacy-cleanup.test.ts --bundle --platform=node --format=cjs --outfile=/tmp/castle-legacy-tests.cjs
+node --test /tmp/castle-legacy-tests.cjs
+```
+
+These cover the deployed obsolete finance helper, multiline imports, preservation
+of modern helpers, and the old duplicate report route.
 
 Browser checks require a running app at `http://localhost:3000`. Playwright is
 used only for testing, not by the deployed app:

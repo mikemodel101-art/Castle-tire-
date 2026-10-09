@@ -193,7 +193,7 @@ src/lib/
 ## 9. Dummy-data & deployment contract
 
 - **Vercel-safe:** no `DATABASE_URL`, no server DB import anywhere (`grep drizzle|@/db` outside `src/db/schema.ts` placeholder = empty). Build works with zero env vars.
-- **`next.config.ts`** contains a legacy-file safety net that deletes first-version leftovers (`r/[reportId]`, old components) at build time if they still contain old code — prevents the “Ambiguous app routes” failure when repos are updated by upload-on-top.
+- **`next.config.ts`** contains a targeted legacy-file safety net that removes known obsolete files before route scanning and TypeScript checking. It covers `r/[reportId]`, old components, and `src/lib/finance.ts` only when the helper imports retired `ExpenseCategory`/`ExpenseEntry` types. Current expense logic in `insights.ts` and modern finance helpers remain intact. This prevents both duplicate-route and missing-type failures after upload-on-top updates. TypeScript checking is never bypassed. `tests/legacy-cleanup.test.ts` exercises the cleanup against temporary repository fixtures.
 - **`.gitignore`** excludes `node_modules/.next/.env/.vercel`; **`README.md`** covers deploy + PWA + FAQ.
 - Anchor-day shifting: stored dates slide forward when the demo is opened on a later day, so “Today” always has work.
 
