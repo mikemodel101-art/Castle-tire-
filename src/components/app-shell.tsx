@@ -17,6 +17,7 @@ import {
   Receipt,
   Settings,
   Users,
+  Wallet,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -39,6 +40,7 @@ const NAV: NavItem[] = [
   { href: "/estimates", label: "Estimates", icon: Receipt, badge: "estimates" },
   { href: "/messages", label: "Messages", icon: MessageSquare, badge: "messages" },
   { href: "/reports", label: "Reports", icon: FileText, badge: "reports" },
+  { href: "/expenses", label: "Expenses", icon: Wallet },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

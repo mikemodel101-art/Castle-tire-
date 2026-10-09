@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CheckCircle2, Clock, MessageSquare, Plus, Receipt, Send, ShieldCheck, Star } from "lucide-react";
+import { useRef } from "react";
+import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, Clock, MessageSquare, Plus, Receipt, Send, ShieldCheck, Star, Wallet } from "lucide-react";
 import { Avatar, Card, JobStatusBadge, JourneyCard, OnboardingBanner, PageHeader, PlateBadge, ProgressBar } from "@/components/ui";
+import { netCashflow, sumByType } from "@/lib/finance";
 import { DASHBOARD_QUICKSTART } from "@/lib/help";
 import { useMe, useShop } from "@/lib/store";
 import {
@@ -56,6 +58,10 @@ export default function DashboardPage() {
   const assignedToMe = todays.filter((j) => j.assignedTo === me.id && j.status !== "completed");
   const openInspections = state.inspections.filter((i) => !i.completedAt && todays.some((j) => j.id === i.jobId)).length;
   const estimateValue = awaiting.reduce((sum, e) => sum + estimateTotals(e, state.settings.taxRate).total, 0);
+  const todaysMoney = state.expenses.filter((x) => x.date === today);
+  const todaysIncome = sumByType(todaysMoney, "income");
+  const todaysOutgoing = sumByType(todaysMoney, "expense");
+  const totalNet = netCashflow(state.expenses);
 
   return (
     <div className="space-y-6">
@@ -81,7 +87,7 @@ export default function DashboardPage() {
         points={DASHBOARD_QUICKSTART}
       />
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <Card className="anim-fade-up p-4">
           <div className="flex items-center gap-2 text-brand-700">
             <ShieldCheck className="size-4" />
@@ -110,33 +116,17 @@ export default function DashboardPage() {
           <p className="mt-2 text-lg font-bold text-slate-950">{money(estimateValue, true)}</p>
           <p className="mt-1 text-sm text-slate-600">Work the customer has not yet approved.</p>
         </Card>
+        <Card className="anim-fade-up p-4">
+          <div className="flex items-center gap-2 text-sky-700">
+            <Wallet className="size-4" />
+            <p className="text-xs font-semibold uppercase tracking-wide">Cash today</p>
+          </div>
+          <p className={`mt-2 text-lg font-bold ${todaysIncome - todaysOutgoing >= 0 ? "text-emerald-700" : "text-red-700"}`}>{money(todaysIncome - todaysOutgoing, true)}</p>
+          <p className="mt-1 text-sm text-slate-600">In {money(todaysIncome, true)} · Out {money(todaysOutgoing, true)} · Total net {money(totalNet, true)}</p>
+        </Card>
       </div>
 
-      <Card className="anim-fade-up overflow-hidden">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
-          <h2 className="font-semibold text-slate-950">Shop workflow</h2>
-          <span className="text-xs text-slate-500">Tap a step to walk through it</span>
-        </div>
-        <ol className="no-scrollbar flex snap-x gap-3 overflow-x-auto p-4">
-          {steps.map((s, i) => (
-            <li key={s.n} className="min-w-[220px] flex-1 snap-start">
-              <Link
-                href={s.href}
-                className="group flex h-full items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md"
-              >
-                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-600 text-sm font-black text-white shadow-sm shadow-brand-600/30">
-                  {s.n}
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold leading-tight text-slate-900">{s.title}</span>
-                  <span className="mt-0.5 block text-xs text-slate-500">{s.text}</span>
-                </span>
-                {i < steps.length - 1 && <ArrowRight className="ml-auto mt-1 hidden size-4 shrink-0 text-blue-500 xl:block" />}
-              </Link>
-            </li>
-          ))}
-        </ol>
-      </Card>
+      <WorkflowCarousel steps={steps} />
 
       <div className="grid gap-3 lg:grid-cols-3">
         {steps.slice(0, 3).map((step) => (
@@ -314,5 +304,52 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function WorkflowCarousel({
+  steps,
+}: {
+  steps: { n: number; title: string; text: string; href: string }[];
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const scroll = (dir: number) => ref.current?.scrollBy({ left: dir * 260, behavior: "smooth" });
+
+  return (
+    <Card className="anim-fade-up overflow-hidden">
+      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
+        <h2 className="font-semibold text-slate-950">Shop workflow</h2>
+        <div className="flex items-center gap-2">
+          <span className="hidden text-xs text-slate-500 sm:inline">Tap a step to walk through it</span>
+          <button type="button" onClick={() => scroll(-1)} aria-label="Previous workflow step" className="grid size-8 place-items-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200">
+            <ChevronLeft className="size-4" />
+          </button>
+          <button type="button" onClick={() => scroll(1)} aria-label="Next workflow step" className="grid size-8 place-items-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200">
+            <ChevronRight className="size-4" />
+          </button>
+        </div>
+      </div>
+      <div ref={ref} className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto p-4">
+        {steps.map((s, i) => (
+          <Link
+            key={s.n}
+            href={s.href}
+            className="group flex min-h-[124px] w-[260px] shrink-0 snap-start items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md sm:w-[280px]"
+          >
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-600 text-sm font-black text-white shadow-sm shadow-brand-600/30">
+              {s.n}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold leading-tight text-slate-900">{s.title}</span>
+              <span className="mt-1 block text-xs leading-relaxed text-slate-500">{s.text}</span>
+            </span>
+            {i < steps.length - 1 && <ArrowRight className="mt-1 hidden size-4 shrink-0 text-blue-500 sm:block" />}
+          </Link>
+        ))}
+      </div>
+      <div className="border-t border-slate-100 px-5 py-2 text-[11px] text-slate-500 sm:hidden">
+        Swipe or use the arrows to see every workflow step.
+      </div>
+    </Card>
   );
 }

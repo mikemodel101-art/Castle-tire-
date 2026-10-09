@@ -145,6 +145,34 @@ export type Message = {
   by?: string;
 };
 
+export type ExpenseType = "income" | "expense";
+export type ExpenseCategory =
+  | "repair_sale"
+  | "tire_sale"
+  | "labor"
+  | "parts_purchase"
+  | "payroll"
+  | "rent"
+  | "utilities"
+  | "tools"
+  | "marketing"
+  | "other";
+
+export type ExpenseEntry = {
+  id: string;
+  type: ExpenseType;
+  category: ExpenseCategory;
+  title: string;
+  amount: number;
+  date: string;
+  note: string;
+  vendor?: string;
+  customerId?: string;
+  jobId?: string;
+  method?: "cash" | "card" | "bank" | "check" | "other";
+  createdBy: string;
+};
+
 export type AlignmentPackage = { price: AlignmentPrice; label: string };
 
 export type Settings = {
@@ -177,6 +205,7 @@ export type ShopState = {
   reports: Report[];
   estimates: Estimate[];
   messages: Message[];
+  expenses: ExpenseEntry[];
 };
 
 // ---------- Constants ----------

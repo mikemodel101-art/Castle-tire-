@@ -8,6 +8,7 @@ import {
   type Corner,
   type Customer,
   type Estimate,
+  type ExpenseEntry,
   type Grade,
   type Inspection,
   type Job,
@@ -354,6 +355,19 @@ export function createSeed(today: string): ShopState {
     { id: "m10", customerId: "c8", jobId: "J-2058", direction: "out", kind: "text", body: "Hi Linda, your Wrangler is ready. Your winter tires are stored with us on rack B-12.", at: at(0, "09:25"), by: "jen" },
   ];
 
+  const expenses: ExpenseEntry[] = [
+    { id: "x1", type: "income", category: "repair_sale", title: "Front brake pads & rotors", amount: 456.25, date: day(0), note: "Approved estimate E-1001", customerId: "c6", jobId: "J-2056", method: "card", createdBy: "jen" },
+    { id: "x2", type: "income", category: "labor", title: "Tire puncture repair", amount: 45, date: day(0), note: "Walk-in tire repair completed", customerId: "c7", jobId: "J-2057", method: "cash", createdBy: "jen" },
+    { id: "x3", type: "income", category: "tire_sale", title: "Seasonal tire swap", amount: 120, date: day(0), note: "Swap and balance", customerId: "c8", jobId: "J-2058", method: "card", createdBy: "jen" },
+    { id: "x4", type: "expense", category: "parts_purchase", title: "Brake parts restock", amount: 310, date: day(0), note: "Pads and rotors supplier order", vendor: "Worcester Auto Supply", method: "bank", createdBy: "mike" },
+    { id: "x5", type: "expense", category: "utilities", title: "Shop electricity", amount: 145.8, date: day(-1), note: "Weekly utility allocation", vendor: "National Grid", method: "bank", createdBy: "mike" },
+    { id: "x6", type: "expense", category: "tools", title: "Tread gauge replacement", amount: 28.99, date: day(-2), note: "New digital tread depth gauge", vendor: "Tool World", method: "card", createdBy: "mike" },
+    { id: "x7", type: "income", category: "repair_sale", title: "Alignment service", amount: 89, date: day(-3), note: "BMW 328i alignment", customerId: "c6", jobId: "J-1990", method: "card", createdBy: "jen" },
+    { id: "x8", type: "expense", category: "rent", title: "Monthly shop rent", amount: 3200, date: day(-10), note: "Main Street location", vendor: "Castle Property LLC", method: "bank", createdBy: "mike" },
+    { id: "x9", type: "expense", category: "payroll", title: "Weekly payroll", amount: 1860, date: day(-5), note: "Technicians + service advisor", method: "bank", createdBy: "mike" },
+    { id: "x10", type: "income", category: "repair_sale", title: "Winter tire install", amount: 540, date: day(-20), note: "4 winter tires + install", customerId: "c5", jobId: "J-1932", method: "card", createdBy: "jen" },
+  ];
+
   return {
     version: STORE_VERSION,
     anchorDay: today,
@@ -368,5 +382,6 @@ export function createSeed(today: string): ShopState {
     reports,
     estimates,
     messages,
+    expenses,
   };
 }

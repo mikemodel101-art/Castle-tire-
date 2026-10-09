@@ -86,7 +86,7 @@ export default function TodaysJobsPage() {
           </div>
 
           <div className="anim-fade-up rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-slate-200">
-            <div className="grid grid-cols-3">
+            <div className="grid grid-cols-3 gap-1">
               {TABS.map((t) => {
                 const active = tab === t.id;
                 return (
@@ -94,12 +94,12 @@ export default function TodaysJobsPage() {
                     key={t.id}
                     type="button"
                     onClick={() => setTab(t.id)}
-                    className={`flex items-center justify-center gap-2 border-b-[3px] px-2 py-3 text-sm font-semibold transition ${
+                    className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl border-b-[3px] px-1 py-2.5 text-center text-xs font-semibold leading-tight transition sm:px-2 sm:text-sm ${
                       active ? t.active : "border-transparent text-slate-500 hover:text-slate-800"
                     }`}
                   >
-                    {t.label}
-                    <span className={`min-w-6 rounded-full px-1.5 text-xs font-bold leading-5 ${active ? t.count : "bg-slate-100 text-slate-600"}`}>
+                    <span className="break-words">{t.label}</span>
+                    <span className={`min-w-6 rounded-full px-1.5 text-[11px] font-bold leading-5 ${active ? t.count : "bg-slate-100 text-slate-600"}`}>
                       {counts[t.id]}
                     </span>
                   </button>

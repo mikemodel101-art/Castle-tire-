@@ -3,6 +3,7 @@
 import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
 import type {
   Estimate,
+  ExpenseEntry,
   Inspection,
   Job,
   JobStatus,
@@ -461,6 +462,23 @@ export function sendMessage(customerId: string, body: string, by: string, jobId?
       { id: `m${s.seq + 1}`, customerId, jobId, direction: "out", kind: "text", body, at: nowISO(), by },
     ],
   }));
+}
+
+export function addExpense(entry: Omit<ExpenseEntry, "id">): string {
+  let id = "";
+  setState((s) => {
+    id = `x${s.seq + 1}`;
+    return { ...s, seq: s.seq + 1, expenses: [{ ...entry, id }, ...s.expenses] };
+  });
+  return id;
+}
+
+export function updateExpense(id: string, patch: Partial<ExpenseEntry>) {
+  setState((s) => ({ ...s, expenses: s.expenses.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
+}
+
+export function removeExpense(id: string) {
+  setState((s) => ({ ...s, expenses: s.expenses.filter((x) => x.id !== id) }));
 }
 
 export function addMedia(m: Omit<Media, "id">): string {
