@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+/* ---------- Keyframes ---------- */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes word-rise {
+  from { opacity: 0; transform: translateY(40px) rotate(3deg); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(-18px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-22px) rotate(8deg); }
+}
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+@keyframes kenburns {
+  from { transform: scale(1.12); }
+  to { transform: scale(1); }
+}
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-8px); }
+  40%, 60% { transform: translateX(8px); }
+}
+@keyframes shimmer {
+  0% { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(260%) skewX(-20deg); }
+}
+@keyframes gradient-pan {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes road {
+  to { background-position: 80px 0; }
+}
+@keyframes pulse-dot {
+  0% { box-shadow: 0 0 0 0 currentColor; }
+  70% { box-shadow: 0 0 0 8px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes rise-bar {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* ---------- Utility classes ---------- */
+.anim-fade-up { animation: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.anim-fade-in { animation: fade-in 0.8s ease both; }
+.anim-word { opacity: 0; animation: word-rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+.anim-slide-in { opacity: 0; animation: slide-in 0.6s ease-out forwards; }
+.anim-float { animation: float 9s ease-in-out infinite; }
+.anim-spin-slow { animation: spin-slow 24s linear infinite; }
+.anim-kenburns { animation: kenburns 22s ease-out both; }
+.anim-shake { animation: shake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+.anim-gradient { background-size: 200% 200%; animation: gradient-pan 8s ease infinite; }
+.anim-road {
+  background-image: repeating-linear-gradient(90deg, rgba(251, 191, 36, 0.9) 0 40px, transparent 40px 80px);
+  background-size: 80px 100%;
+  animation: road 0.9s linear infinite;
+  height: 6px;
+}
+.anim-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.45) 50%, transparent 70%);
+  animation: shimmer 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+.anim-bar { transform-origin: left; animation: rise-bar 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.page-enter { animation: fade-up 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.live-dot { animation: pulse-dot 2s infinite; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+html { -webkit-tap-highlight-color: transparent; }
+
+@media print {
+  .no-print { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
