@@ -5,6 +5,57 @@ technician accept/claim, digital inspections based on the Castle paper sheet,
 photos & short videos, customer text reports, estimates, messages and full
 customer / vehicle history. Works on Windows PCs, iPhone, Android and tablets.
 
+## New user quick start
+
+1. **Sign in** with one of the demo logins below.
+2. Open **Dashboard** to see the workflow strip, quick-start guide and live shop load.
+3. Use **New Vehicle** to create a work order.
+4. Open **Today's Jobs** and accept a waiting vehicle.
+5. Run the **Inspection** step-by-step and add photos.
+6. Finish on **Inspection Complete** to send the report and create the estimate.
+7. Use **Customers**, **Vehicles**, **Messages**, **Reports** and **Estimates** to review history and follow up.
+
+## Expanded feature set
+
+### Dashboard
+- onboarding workflow strip for new employees
+- quick-start guidance and role-specific tips
+- live counts for waiting, active and completed work
+- ready-to-send reports and pending estimate alerts
+- recent customer message activity
+- team-on-shift overview
+
+### Today's Jobs
+- clearer Waiting / In Progress / Completed explanations
+- faster filters for My Jobs and all-day view
+- stronger vehicle cards with photo, plate and assigned technician
+- easier new-user understanding of the job flow
+
+### Inspections
+- section guidance for Tires / Brakes / TPMS / Suspension / Alignment
+- step-by-step wizard based on the Castle paper sheet
+- better newcomer help while entering measurements
+- stronger complete-summary handoff screen
+- printable filled-out inspection sheet
+
+### Estimates
+- estimate list with workflow explanations
+- line-level approve / decline controls
+- totals, tax and approved-work tracking
+- stronger customer texting workflow
+
+### Customers & Vehicles
+- easier history lookup by customer or by vehicle
+- richer customer detail view with open recommendations and communication history
+- vehicle-centric service history and report shortcuts
+
+### Reports
+- manager-facing report queue
+- resend, preview, sheet view and link copy actions
+- better customer-facing explanations inside the public report
+
+For a more detailed internal product map, see **PROJECT.md**.
+
 ## Demo mode: no database
 
 - The app runs **100% on dummy data** (`src/lib/seed.ts`). Nothing connects to a

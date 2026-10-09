@@ -18,9 +18,10 @@ import {
   UserCheck,
 } from "lucide-react";
 import { ShopIcon } from "@/components/brand";
-import { Avatar, Card, EmptyState, JobStatusBadge, LightChip, PlateBadge } from "@/components/ui";
+import { Avatar, Card, EmptyState, InfoPanel, JobStatusBadge, LightChip, PlateBadge } from "@/components/ui";
 import { Toast, useToast } from "@/components/toast";
 import { JOB_STATUSES, JOB_STATUS_LABEL, SUMMARY_ORDER, SECTION_LABEL } from "@/lib/data";
+import { APP_JOURNEY } from "@/lib/help";
 import { acceptJob, assignJob, setJobStatus, useMe, useShop } from "@/lib/store";
 import {
   byId,
@@ -177,133 +178,134 @@ export default function JobDetailPage() {
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[1.15fr_1fr]">
-        {/* Main job card */}
-        <Card className="anim-fade-up overflow-hidden">
-          <div className="relative h-48 bg-slate-900 sm:h-56">
-            <img src={vehiclePhoto(vehicle)} alt={vehicleLabel(vehicle)} className="h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-            <div className="absolute left-4 top-4">
-              <span className="rounded-full bg-white/90 px-2.5 py-1 font-mono text-xs font-bold text-slate-800 backdrop-blur">{job.id}</span>
-            </div>
-            <div className="absolute right-4 top-4">
-              <JobStatusBadge status={job.status} />
-            </div>
-            <div className="absolute inset-x-4 bottom-4 text-white">
-              <h1 className="text-2xl font-bold tracking-tight">{vehicleLabel(vehicle)}</h1>
-              <p className="mt-0.5 text-sm text-slate-200">
-                {vehicle.plate} &nbsp;|&nbsp; {fmtMiles(job.mileageIn || vehicle.mileage)}
-                {vehicle.color ? ` · ${vehicle.color}` : ""}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-5 p-5 sm:p-6">
-            <dl className="grid gap-3 text-sm">
-              <div className="grid grid-cols-[96px_1fr] gap-2">
-                <dt className="text-slate-500">Customer:</dt>
-                <dd>
-                  <Link href={`/customers/${customer.id}`} className="font-semibold text-slate-900 hover:text-blue-600">{customer.name}</Link>
-                  <span className="block text-slate-600">{customer.phone}</span>
-                </dd>
-              </div>
-              <div className="grid grid-cols-[96px_1fr] gap-2">
-                <dt className="text-slate-500">Complaint:</dt>
-                <dd className="font-medium text-slate-900">{job.complaint}</dd>
-              </div>
-              <div className="grid grid-cols-[96px_1fr] gap-2">
-                <dt className="text-slate-500">Appointment:</dt>
-                <dd className="text-slate-900">{relDay(job.date, state.anchorDay)} · {job.time}</dd>
-              </div>
-            </dl>
-
-            {action}
-
-            {/* Status timeline */}
-            <div>
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Job status</h2>
-              <ol className="relative space-y-0">
-                {JOB_STATUSES.map((st, i) => {
-                  const entry = [...job.timeline].reverse().find((t) => t.status === st);
-                  const done = i <= current;
-                  const isCurrent = i === current;
-                  const who = entry ? byId(state.team, entry.by)?.name.split(" ")[0] : undefined;
-                  return (
-                    <li key={st} className="relative flex gap-3 pb-4 last:pb-0">
-                      {i < JOB_STATUSES.length - 1 && (
-                        <span className={`absolute left-[11px] top-6 h-[calc(100%-12px)] w-0.5 ${i < current ? "bg-blue-600" : "bg-slate-200"}`} />
-                      )}
-                      <span
-                        className={`relative z-10 grid size-6 shrink-0 place-items-center rounded-full ring-2 ${
-                          done ? "bg-blue-600 text-white ring-blue-600" : "bg-white ring-slate-300"
-                        } ${isCurrent && job.status !== "completed" ? "anim-ping-ring" : ""}`}
-                      >
-                        {done && <Check className="size-3.5" strokeWidth={3} />}
-                      </span>
-                      <div className="min-w-0 pt-0.5">
-                        <p className={`text-sm ${done ? "font-semibold text-slate-900" : "text-slate-500"}`}>{JOB_STATUS_LABEL[st]}</p>
-                        {entry && (
-                          <p className="text-xs text-slate-500">
-                            {who ?? "Shop"} · {fmtTime(entry.at)}
-                          </p>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          </div>
-        </Card>
-
-        {/* Side panels */}
+      <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
         <div className="space-y-5">
-          <Card className="anim-fade-up p-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Contact</p>
-            <div className="mt-3 flex items-center gap-3">
-              <Avatar initials={customer.name.split(" ").map((p) => p[0]).slice(0, 2).join("")} tone="light" size="lg" />
-              <div className="min-w-0">
-                <p className="truncate font-semibold text-slate-900">{customer.name}</p>
-                <p className="truncate text-sm text-slate-500">{customer.phone} · {customer.city}</p>
-              </div>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <a href={telHref(customer.phone)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
-                <Phone className="size-4" /> Call
-              </a>
-              <a href={smsHref(customer.phone, `Hi ${firstName(customer.name)}, this is ${s.shopName} about your ${vehicleLabel(vehicle)}.`)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
-                <MessageSquare className="size-4" /> Text
-              </a>
-            </div>
-          </Card>
-
-          <Card className="anim-fade-up p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Technician</p>
-              <select
-                value={job.assignedTo ?? ""}
-                onChange={(e) => assignJob(job.id, e.target.value || null)}
-                aria-label="Assign technician"
-                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700"
-              >
-                <option value="">Unassigned</option>
-                {state.team.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-            </div>
-            {tech ? (
-              <div className="mt-3 flex items-center gap-3">
-                <Avatar initials={tech.initials} tone={tech.id === me.id ? "brand" : "dark"} size="lg" />
-                <div>
-                  <p className="font-semibold text-slate-900">{tech.name}{tech.id === me.id ? " (you)" : ""}</p>
-                  <p className="text-sm text-slate-500">{tech.role}</p>
+          <div className="grid gap-5 lg:grid-cols-[1.15fr_1fr] xl:grid-cols-1">
+            <Card className="anim-fade-up overflow-hidden">
+              <div className="relative h-48 bg-slate-900 sm:h-56">
+                <img src={vehiclePhoto(vehicle)} alt={vehicleLabel(vehicle)} className="h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+                <div className="absolute left-4 top-4">
+                  <span className="rounded-full bg-white/90 px-2.5 py-1 font-mono text-xs font-bold text-slate-800 backdrop-blur">{job.id}</span>
+                </div>
+                <div className="absolute right-4 top-4">
+                  <JobStatusBadge status={job.status} />
+                </div>
+                <div className="absolute inset-x-4 bottom-4 text-white">
+                  <h1 className="text-2xl font-bold tracking-tight">{vehicleLabel(vehicle)}</h1>
+                  <p className="mt-0.5 text-sm text-slate-200">
+                    {vehicle.plate} &nbsp;|&nbsp; {fmtMiles(job.mileageIn || vehicle.mileage)}
+                    {vehicle.color ? ` · ${vehicle.color}` : ""}
+                  </p>
                 </div>
               </div>
-            ) : (
-              <p className="mt-3 text-sm text-slate-500">Waiting for a technician to accept.</p>
-            )}
-          </Card>
+
+              <div className="space-y-5 p-5 sm:p-6">
+                <dl className="grid gap-3 text-sm">
+                  <div className="grid grid-cols-[96px_1fr] gap-2">
+                    <dt className="text-slate-500">Customer:</dt>
+                    <dd>
+                      <Link href={`/customers/${customer.id}`} className="font-semibold text-slate-900 hover:text-blue-600">{customer.name}</Link>
+                      <span className="block text-slate-600">{customer.phone}</span>
+                    </dd>
+                  </div>
+                  <div className="grid grid-cols-[96px_1fr] gap-2">
+                    <dt className="text-slate-500">Complaint:</dt>
+                    <dd className="font-medium text-slate-900">{job.complaint}</dd>
+                  </div>
+                  <div className="grid grid-cols-[96px_1fr] gap-2">
+                    <dt className="text-slate-500">Appointment:</dt>
+                    <dd className="text-slate-900">{relDay(job.date, state.anchorDay)} · {job.time}</dd>
+                  </div>
+                </dl>
+
+                {action}
+
+                <div>
+                  <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Job status</h2>
+                  <ol className="relative space-y-0">
+                    {JOB_STATUSES.map((st, i) => {
+                      const entry = [...job.timeline].reverse().find((t) => t.status === st);
+                      const done = i <= current;
+                      const isCurrent = i === current;
+                      const who = entry ? byId(state.team, entry.by)?.name.split(" ")[0] : undefined;
+                      return (
+                        <li key={st} className="relative flex gap-3 pb-4 last:pb-0">
+                          {i < JOB_STATUSES.length - 1 && (
+                            <span className={`absolute left-[11px] top-6 h-[calc(100%-12px)] w-0.5 ${i < current ? "bg-blue-600" : "bg-slate-200"}`} />
+                          )}
+                          <span
+                            className={`relative z-10 grid size-6 shrink-0 place-items-center rounded-full ring-2 ${
+                              done ? "bg-blue-600 text-white ring-blue-600" : "bg-white ring-slate-300"
+                            } ${isCurrent && job.status !== "completed" ? "anim-ping-ring" : ""}`}
+                          >
+                            {done && <Check className="size-3.5" strokeWidth={3} />}
+                          </span>
+                          <div className="min-w-0 pt-0.5">
+                            <p className={`text-sm ${done ? "font-semibold text-slate-900" : "text-slate-500"}`}>{JOB_STATUS_LABEL[st]}</p>
+                            {entry && (
+                              <p className="text-xs text-slate-500">
+                                {who ?? "Shop"} · {fmtTime(entry.at)}
+                              </p>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              </div>
+            </Card>
+
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-1">
+              <Card className="anim-fade-up p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Contact</p>
+                <div className="mt-3 flex items-center gap-3">
+                  <Avatar initials={customer.name.split(" ").map((p) => p[0]).slice(0, 2).join("")} tone="light" size="lg" />
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-slate-900">{customer.name}</p>
+                    <p className="truncate text-sm text-slate-500">{customer.phone} · {customer.city}</p>
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <a href={telHref(customer.phone)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
+                    <Phone className="size-4" /> Call
+                  </a>
+                  <a href={smsHref(customer.phone, `Hi ${firstName(customer.name)}, this is ${s.shopName} about your ${vehicleLabel(vehicle)}.`)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
+                    <MessageSquare className="size-4" /> Text
+                  </a>
+                </div>
+              </Card>
+
+              <Card className="anim-fade-up p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Technician</p>
+                  <select
+                    value={job.assignedTo ?? ""}
+                    onChange={(e) => assignJob(job.id, e.target.value || null)}
+                    aria-label="Assign technician"
+                    className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700"
+                  >
+                    <option value="">Unassigned</option>
+                    {state.team.map((m) => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                </div>
+                {tech ? (
+                  <div className="mt-3 flex items-center gap-3">
+                    <Avatar initials={tech.initials} tone={tech.id === me.id ? "brand" : "dark"} size="lg" />
+                    <div>
+                      <p className="font-semibold text-slate-900">{tech.name}{tech.id === me.id ? " (you)" : ""}</p>
+                      <p className="text-sm text-slate-500">{tech.role}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-slate-500">Waiting for a technician to accept.</p>
+                )}
+              </Card>
+            </div>
+          </div>
 
           <Card className="anim-fade-up p-5">
             <div className="flex items-center justify-between">
@@ -361,10 +363,33 @@ export default function JobDetailPage() {
               </div>
             )}
           </Card>
+        </div>
+
+        <div className="space-y-5">
+          <InfoPanel
+            title="What should the user do on this page?"
+            text="Use this page as the command center for one vehicle: confirm customer details, assign the right technician, move the status, open the inspection, and then send the report or estimate."
+            tip="If the job is still waiting, the next action is usually Accept Job or assigning it to a technician."
+          />
+
+          <Card className="anim-fade-up p-5">
+            <h3 className="font-semibold text-slate-950">Where am I in the workflow?</h3>
+            <ol className="mt-4 space-y-3 text-sm text-slate-600">
+              {APP_JOURNEY.slice(1, 6).map((step, i) => (
+                <li key={step.title} className="flex items-start gap-3">
+                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-slate-950 text-xs font-bold text-white">{i + 2}</span>
+                  <div>
+                    <p className="font-semibold text-slate-900">{step.title}</p>
+                    <p>{step.text}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </Card>
 
           {(report || estimate) && (
             <Card className="anim-fade-up space-y-3 p-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Customer</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Customer communication</p>
               {report && (
                 <div className="flex items-center justify-between gap-2 text-sm">
                   <span>

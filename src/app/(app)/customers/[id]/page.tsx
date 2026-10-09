@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, ClipboardCheck, ExternalLink, FileText, MessageSquare, Phone, Play, Plus } from "lucide-react";
 import { ShopIcon } from "@/components/brand";
-import { Avatar, Card, EmptyState, JobStatusBadge, LightChip, LightDot, PlateBadge } from "@/components/ui";
+import { Avatar, Card, EmptyState, InfoPanel, JobStatusBadge, LightChip, LightDot, OnboardingBanner, PlateBadge } from "@/components/ui";
+import { APP_JOURNEY } from "@/lib/help";
 import { MEDIA_SECTION_LABEL, PRIORITY_LABEL, SECTION_LABEL, SUMMARY_ORDER } from "@/lib/data";
 import { useShop } from "@/lib/store";
 import {
@@ -52,6 +53,12 @@ export default function CustomerDetailPage() {
       <Link href="/customers" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900">
         <ArrowLeft className="size-4" /> All customers
       </Link>
+
+      <OnboardingBanner
+        title="This is the full customer relationship view"
+        text="Use this page when the advisor needs everything in one place: vehicles, open recommendations, previous visits, and communication history."
+        points={[APP_JOURNEY[0].title, APP_JOURNEY[5].title]}
+      />
 
       <Card className="anim-fade-up p-5 sm:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -188,6 +195,11 @@ export default function CustomerDetailPage() {
         </div>
 
         <div className="space-y-5">
+          <InfoPanel
+            title="How to use customer history"
+            text="This page is best for conversations: what work did we do before, what does the car still need, and what did we already text the customer?"
+            tip="Start new work from the correct vehicle card so the next visit stays connected to the same history."
+          />
           <Card className="anim-fade-up p-5">
             <h2 className="font-bold text-slate-950">Open recommendations</h2>
             <p className="text-xs text-slate-500">From each vehicle&apos;s latest inspection</p>

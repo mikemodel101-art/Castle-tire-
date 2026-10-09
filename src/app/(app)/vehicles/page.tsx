@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ExternalLink, History, Plus, Search } from "lucide-react";
 import { ShopIcon } from "@/components/brand";
-import { Card, EmptyState, LightDot, PageHeader, PlateBadge } from "@/components/ui";
+import { Card, EmptyState, InfoPanel, OnboardingBanner, PageHeader, PlateBadge } from "@/components/ui";
+import { APP_JOURNEY } from "@/lib/help";
 import { SECTION_LABEL, SUMMARY_ORDER } from "@/lib/data";
 import { useShop } from "@/lib/store";
 import { byId, fmtMiles, relDay, sectionChip, vehicleLabel, vehiclePhoto } from "@/lib/utils";
@@ -45,72 +46,91 @@ export default function VehiclesPage() {
           </Link>
         }
       />
-      <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Plate, VIN, make, model or owner"
-          aria-label="Search vehicles"
-          className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15"
-        />
-      </div>
 
-      {rows.length === 0 ? (
-        <EmptyState title="No vehicles found" text="Try a different plate, VIN or owner name." />
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {rows.map(({ v, owner, jobs, latest, report }) => (
-            <Card key={v.id} className="anim-fade-up flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-md">
-              <div className="relative h-40 bg-slate-900">
-                <img src={vehiclePhoto(v)} alt={vehicleLabel(v)} className="h-full w-full object-cover" />
-                <PlateBadge plate={v.plate} className="absolute bottom-3 right-3" />
-              </div>
-              <div className="flex flex-1 flex-col p-4">
-                <h2 className="font-bold text-slate-950">{vehicleLabel(v)}</h2>
-                <p className="text-sm text-slate-500">
-                  {[v.trim, v.color].filter(Boolean).join(" · ") || "—"} · {fmtMiles(v.mileage)}
-                </p>
-                {owner && (
-                  <Link href={`/customers/${owner.id}#vehicle-${v.id}`} className="mt-1 text-sm font-semibold text-blue-600 hover:underline">
-                    {owner.name}
-                  </Link>
-                )}
-                <p className="mt-2 text-xs text-slate-500">
-                  {jobs.length} visit{jobs.length === 1 ? "" : "s"}
-                  {jobs[0] ? ` · last ${relDay(jobs[0].date, state.anchorDay)}` : ""}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {SUMMARY_ORDER.map((sec) => {
-                    const chip = latest ? sectionChip(latest, sec, s) : { light: "none" as const, label: "—" };
-                    return (
-                      <span key={sec} title={`${SECTION_LABEL[sec]}: ${chip.label}`} className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-1.5 py-1 ring-1 ring-slate-200">
-                        <ShopIcon name={sec} className="size-3.5 text-slate-500" />
-                        <LightDot light={chip.light} className="size-2" />
-                      </span>
-                    );
-                  })}
-                </div>
-                <div className="mt-auto grid grid-cols-3 gap-2 pt-4">
-                  <Link href={owner ? `/customers/${owner.id}#vehicle-${v.id}` : "/customers"} className="inline-flex items-center justify-center gap-1 rounded-lg py-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50">
-                    <History className="size-3.5" /> History
-                  </Link>
-                  <Link href={`/jobs/new?vehicle=${v.id}`} className="inline-flex items-center justify-center gap-1 rounded-lg bg-blue-600 py-2 text-xs font-semibold text-white hover:bg-blue-700">
-                    <Plus className="size-3.5" /> Work order
-                  </Link>
-                  {report ? (
-                    <Link href={`/r/${report.code}`} target="_blank" className="inline-flex items-center justify-center gap-1 rounded-lg py-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50">
-                      <ExternalLink className="size-3.5" /> Report
-                    </Link>
-                  ) : (
-                    <span className="inline-flex items-center justify-center rounded-lg py-2 text-xs text-slate-400 ring-1 ring-slate-100">No report</span>
-                  )}
-                </div>
-              </div>
-            </Card>
-          ))}
+      <OnboardingBanner
+        title="Use Vehicles when the car matters more than the customer"
+        text="This view is perfect when the shop knows the plate, the exact model or the car's service history, but not necessarily who is calling."
+        points={[APP_JOURNEY[0].title, APP_JOURNEY[5].title]}
+      />
+
+      <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-5">
+          <div className="relative max-w-md">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Plate, VIN, make, model or owner"
+              aria-label="Search vehicles"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15"
+            />
+          </div>
+
+          {rows.length === 0 ? (
+            <EmptyState title="No vehicles found" text="Try a different plate, VIN or owner name." />
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {rows.map(({ v, owner, jobs, latest, report }) => (
+                <Card key={v.id} className="anim-fade-up flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-md">
+                  <div className="relative h-40 bg-slate-900">
+                    <img src={vehiclePhoto(v)} alt={vehicleLabel(v)} className="h-full w-full object-cover" />
+                    <PlateBadge plate={v.plate} className="absolute bottom-3 right-3" />
+                  </div>
+                  <div className="flex flex-1 flex-col p-4">
+                    <h2 className="font-bold text-slate-950">{vehicleLabel(v)}</h2>
+                    <p className="text-sm text-slate-500">
+                      {[v.trim, v.color].filter(Boolean).join(" · ") || "—"} · {fmtMiles(v.mileage)}
+                    </p>
+                    {owner && (
+                      <Link href={`/customers/${owner.id}#vehicle-${v.id}`} className="mt-1 text-sm font-semibold text-blue-600 hover:underline">
+                        {owner.name}
+                      </Link>
+                    )}
+                    <p className="mt-2 text-xs text-slate-500">
+                      {jobs.length} visit{jobs.length === 1 ? "" : "s"}
+                      {jobs[0] ? ` · last ${relDay(jobs[0].date, state.anchorDay)}` : ""}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {SUMMARY_ORDER.map((sec) => {
+                        const chip = latest ? sectionChip(latest, sec, s) : { light: "none" as const, label: "—" };
+                        return (
+                          <span key={sec} title={`${SECTION_LABEL[sec]}: ${chip.label}`} className="inline-flex items-center gap-1 rounded-md bg-slate-50 px-1.5 py-1 ring-1 ring-slate-200">
+                            <ShopIcon name={sec} className="size-3.5 text-slate-500" />
+                            <span className={`size-2 rounded-full ${chip.light === "green" ? "bg-emerald-500" : chip.light === "yellow" ? "bg-amber-400" : chip.light === "red" ? "bg-red-500" : chip.light === "blue" ? "bg-sky-500" : "bg-slate-300"}`} />
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-auto grid grid-cols-3 gap-2 pt-4">
+                      <Link href={owner ? `/customers/${owner.id}#vehicle-${v.id}` : "/customers"} className="inline-flex items-center justify-center gap-1 rounded-lg py-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50">
+                        <History className="size-3.5" /> History
+                      </Link>
+                      <Link href={`/jobs/new?vehicle=${v.id}`} className="inline-flex items-center justify-center gap-1 rounded-lg bg-blue-600 py-2 text-xs font-semibold text-white hover:bg-blue-700">
+                        <Plus className="size-3.5" /> Work order
+                      </Link>
+                      {report ? (
+                        <Link href={`/r/${report.code}`} target="_blank" className="inline-flex items-center justify-center gap-1 rounded-lg py-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50">
+                          <ExternalLink className="size-3.5" /> Report
+                        </Link>
+                      ) : (
+                        <span className="inline-flex items-center justify-center rounded-lg py-2 text-xs text-slate-400 ring-1 ring-slate-100">No report</span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+
+        <div className="space-y-5">
+          <InfoPanel
+            title="Why vehicle history matters"
+            text="The same car may return many times with different drivers or family members. This page keeps the service story attached to the vehicle itself."
+            tip="If the vehicle comes back, start the new work order from here so the advisor sees the exact history faster."
+          />
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CheckCircle2, Clock, MessageSquare, Plus, Receipt, Send } from "lucide-react";
-import { Avatar, Card, JobStatusBadge, PageHeader, PlateBadge, ProgressBar } from "@/components/ui";
+import { AlertTriangle, ArrowRight, CheckCircle2, Clock, MessageSquare, Plus, Receipt, Send, ShieldCheck, Star } from "lucide-react";
+import { Avatar, Card, JobStatusBadge, JourneyCard, OnboardingBanner, PageHeader, PlateBadge, ProgressBar } from "@/components/ui";
+import { DASHBOARD_QUICKSTART } from "@/lib/help";
 import { useMe, useShop } from "@/lib/store";
 import {
   byId,
@@ -52,6 +53,9 @@ export default function DashboardPage() {
     { label: "Completed", value: completed.length, hint: `${state.media.filter((m) => m.takenAt.startsWith(today)).length} photos & videos today`, tone: "text-emerald-600" },
   ];
   const pct = (completed.length / Math.max(todays.length, 1)) * 100;
+  const assignedToMe = todays.filter((j) => j.assignedTo === me.id && j.status !== "completed");
+  const openInspections = state.inspections.filter((i) => !i.completedAt && todays.some((j) => j.id === i.jobId)).length;
+  const estimateValue = awaiting.reduce((sum, e) => sum + estimateTotals(e, state.settings.taxRate).total, 0);
 
   return (
     <div className="space-y-6">
@@ -71,7 +75,43 @@ export default function DashboardPage() {
         }
       />
 
-      {/* Workflow strip */}
+      <OnboardingBanner
+        title="A new employee can learn the system in one shift"
+        text="Castle Tire is designed to follow the real shop flow: check in the car, accept the job, inspect it, add media, send the report and build the estimate. Use the workflow cards below in order."
+        points={DASHBOARD_QUICKSTART}
+      />
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <Card className="anim-fade-up p-4">
+          <div className="flex items-center gap-2 text-brand-700">
+            <ShieldCheck className="size-4" />
+            <p className="text-xs font-semibold uppercase tracking-wide">Role focus</p>
+          </div>
+          <p className="mt-2 text-lg font-bold text-slate-950">{me.role}</p>
+          <p className="mt-1 text-sm text-slate-600">
+            {me.role.toLowerCase().includes("technician")
+              ? "Start with Today's Jobs, accept your vehicle, then open the digital inspection."
+              : "Start with the dashboard, create work orders, send reports and keep the queue moving."}
+          </p>
+        </Card>
+        <Card className="anim-fade-up p-4">
+          <div className="flex items-center gap-2 text-blue-700">
+            <Star className="size-4" />
+            <p className="text-xs font-semibold uppercase tracking-wide">Your focus today</p>
+          </div>
+          <p className="mt-2 text-lg font-bold text-slate-950">{assignedToMe.length} active jobs</p>
+          <p className="mt-1 text-sm text-slate-600">{openInspections} inspection{openInspections === 1 ? "" : "s"} still open · {awaiting.length} estimate{awaiting.length === 1 ? "" : "s"} waiting on approval.</p>
+        </Card>
+        <Card className="anim-fade-up p-4">
+          <div className="flex items-center gap-2 text-emerald-700">
+            <Receipt className="size-4" />
+            <p className="text-xs font-semibold uppercase tracking-wide">Pending estimate value</p>
+          </div>
+          <p className="mt-2 text-lg font-bold text-slate-950">{money(estimateValue, true)}</p>
+          <p className="mt-1 text-sm text-slate-600">Work the customer has not yet approved.</p>
+        </Card>
+      </div>
+
       <Card className="anim-fade-up overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
           <h2 className="font-semibold text-slate-950">Shop workflow</h2>
@@ -79,7 +119,7 @@ export default function DashboardPage() {
         </div>
         <ol className="no-scrollbar flex snap-x gap-3 overflow-x-auto p-4">
           {steps.map((s, i) => (
-            <li key={s.n} className="min-w-[200px] flex-1 snap-start">
+            <li key={s.n} className="min-w-[220px] flex-1 snap-start">
               <Link
                 href={s.href}
                 className="group flex h-full items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md"
@@ -98,7 +138,12 @@ export default function DashboardPage() {
         </ol>
       </Card>
 
-      {/* Stats */}
+      <div className="grid gap-3 lg:grid-cols-3">
+        {steps.slice(0, 3).map((step) => (
+          <JourneyCard key={step.n} index={step.n} title={step.title} text={step.text} tip={step.n === 1 ? "The phone number helps you find returning customers." : step.n === 2 ? "Use the tabs to switch between waiting and completed vehicles." : "A technician should accept the job before starting the inspection."} />
+        ))}
+      </div>
+
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {stats.map((s, i) => (
           <Card key={s.label} className="anim-fade-up p-4 sm:p-5">
@@ -112,7 +157,6 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        {/* Schedule */}
         <Card className="anim-fade-up xl:col-span-2">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <div>
@@ -168,7 +212,7 @@ export default function DashboardPage() {
                 const customer = job ? byId(state.customers, job.customerId) : undefined;
                 return (
                   <li key={r.code}>
-                    <Link href={`/inspections/${r.jobId}/complete`} className="flex items-start gap-3 rounded-xl bg-blue-50 p-3 ring-1 ring-blue-100 transition hover:bg-blue-100/70">
+                    <Link href={`/reports`} className="flex items-start gap-3 rounded-xl bg-blue-50 p-3 ring-1 ring-blue-100 transition hover:bg-blue-100/70">
                       <Send className="mt-0.5 size-5 shrink-0 text-blue-600" />
                       <span className="text-sm">
                         <span className="font-semibold text-slate-900">Inspection ready to send</span>

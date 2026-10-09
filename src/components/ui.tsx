@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Info, Sparkles } from "lucide-react";
 import { JOB_STATUS_LABEL, type JobStatus, type Light } from "@/lib/data";
 import { LIGHT_META, jobGroup } from "@/lib/utils";
 
@@ -51,7 +52,6 @@ export function LightChip({
   );
 }
 
-/** Solid status pill like the mock-up summary ("Soon", "Replace", "Good"). */
 export function SolidChip({ light, label, className = "" }: { light: Light; label: string; className?: string }) {
   return (
     <span
@@ -165,6 +165,100 @@ export function OkRecToggle({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+export function InfoPanel({
+  title,
+  text,
+  tip,
+  tone = "blue",
+}: {
+  title: string;
+  text: string;
+  tip?: string;
+  tone?: "blue" | "amber" | "slate" | "emerald";
+}) {
+  const tones = {
+    blue: "bg-blue-50 text-blue-900 ring-blue-200",
+    amber: "bg-amber-50 text-amber-900 ring-amber-200",
+    slate: "bg-slate-50 text-slate-800 ring-slate-200",
+    emerald: "bg-emerald-50 text-emerald-900 ring-emerald-200",
+  };
+  return (
+    <div className={`rounded-2xl p-4 ring-1 ${tones[tone]}`}>
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-white/80">
+          <Info className="size-4" />
+        </span>
+        <div>
+          <p className="font-semibold">{title}</p>
+          <p className="mt-1 text-sm leading-relaxed opacity-90">{text}</p>
+          {tip && <p className="mt-2 text-xs font-medium opacity-80">Tip: {tip}</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function JourneyCard({
+  index,
+  title,
+  text,
+  tip,
+  className = "",
+}: {
+  index: number;
+  title: string;
+  text: string;
+  tip?: string;
+  className?: string;
+}) {
+  return (
+    <div className={`rounded-2xl bg-white p-4 ring-1 ring-slate-200 ${className}`}>
+      <div className="flex items-start gap-3">
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-600 text-sm font-black text-white">{index}</span>
+        <div>
+          <p className="font-semibold text-slate-950">{title}</p>
+          <p className="mt-1 text-sm leading-relaxed text-slate-600">{text}</p>
+          {tip && <p className="mt-2 text-xs font-medium text-brand-700">Tip: {tip}</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function OnboardingBanner({
+  title,
+  text,
+  points,
+}: {
+  title: string;
+  text: string;
+  points?: string[];
+}) {
+  return (
+    <div className="anim-fade-up overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-brand-950 text-white shadow-xl">
+      <div className="flex flex-col gap-4 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="max-w-2xl">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-brand-300">
+            <Sparkles className="size-3.5" /> First-time user guide
+          </p>
+          <h2 className="mt-2 text-xl font-bold sm:text-2xl">{title}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-slate-300 sm:text-base">{text}</p>
+        </div>
+        {points && points.length > 0 && (
+          <ul className="grid gap-2 text-sm text-slate-200 lg:max-w-md">
+            {points.map((p) => (
+              <li key={p} className="flex items-start gap-2">
+                <span className="mt-1 size-2 shrink-0 rounded-full bg-brand-400" />
+                <span>{p}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

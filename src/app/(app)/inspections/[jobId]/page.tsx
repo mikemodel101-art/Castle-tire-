@@ -6,7 +6,7 @@ import { useState, type ReactNode } from "react";
 import { ArrowLeft, Camera, Check, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, FileText } from "lucide-react";
 import { BrakeDisc, CarTopView, ShopIcon } from "@/components/brand";
 import { PhotoCapture, type CaptureTarget } from "@/components/photo-capture";
-import { Card, EmptyState, LightChip, OkRecToggle } from "@/components/ui";
+import { Card, EmptyState, InfoPanel, LightChip, OkRecToggle } from "@/components/ui";
 import {
   CORNERS,
   GRADE_LABEL,
@@ -29,6 +29,7 @@ import {
   type Settings,
   type SuspensionPart,
 } from "@/lib/data";
+import { SECTION_EXPLAINERS } from "@/lib/help";
 import { completeInspection, updateInspection, useMe, useShop } from "@/lib/store";
 import {
   GRADE_LIGHT,
@@ -136,8 +137,7 @@ export default function InspectionWizardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4">
-      {/* Header */}
+    <div className="mx-auto max-w-5xl space-y-4">
       <div className="flex items-center gap-3">
         <Link href={`/jobs/${job.id}`} aria-label="Back to job" className="grid size-10 shrink-0 place-items-center rounded-xl bg-white ring-1 ring-slate-200 hover:bg-slate-50">
           <ArrowLeft className="size-5" />
@@ -151,82 +151,101 @@ export default function InspectionWizardPage() {
         </Link>
       </div>
 
-      <Card className="flex items-center gap-3 p-3">
-        <img src={vehiclePhoto(vehicle)} alt="" className="h-14 w-20 shrink-0 rounded-lg object-cover" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-bold text-slate-950">{vehicleLabel(vehicle)}</p>
-          <p className="truncate text-xs text-slate-500">
-            {vehicle.plate} | {fmtMiles(job.mileageIn || vehicle.mileage)} · {customer.name}
-          </p>
-          <p className="truncate text-xs text-slate-500">Tech: {(tech ?? me).name}</p>
-        </div>
-        <div className="w-20 shrink-0 text-right sm:w-28">
-          <p className="text-xs font-semibold text-slate-500">{progress}% done</p>
-          <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
+      <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
+        <div className="space-y-4">
+          <Card className="flex items-center gap-3 p-3">
+            <img src={vehiclePhoto(vehicle)} alt="" className="h-14 w-20 shrink-0 rounded-lg object-cover" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-bold text-slate-950">{vehicleLabel(vehicle)}</p>
+              <p className="truncate text-xs text-slate-500">
+                {vehicle.plate} | {fmtMiles(job.mileageIn || vehicle.mileage)} · {customer.name}
+              </p>
+              <p className="truncate text-xs text-slate-500">Tech: {(tech ?? me).name}</p>
+            </div>
+            <div className="w-20 shrink-0 text-right sm:w-28">
+              <p className="text-xs font-semibold text-slate-500">{progress}% done</p>
+              <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
+              </div>
+            </div>
+          </Card>
+
+          {ins.completedAt && (
+            <Link href={`/inspections/${job.id}/complete`} className="flex items-center gap-3 rounded-2xl bg-emerald-50 p-3 text-sm text-emerald-800 ring-1 ring-emerald-200">
+              <CheckCircle2 className="size-5 shrink-0" />
+              <span className="flex-1">Completed at {fmtTime(ins.completedAt)}. Edits update the customer report.</span>
+              <span className="font-semibold">Summary →</span>
+            </Link>
+          )}
+
+          <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
+            {STEPS.map((st, i) => {
+              const active = i === step;
+              const light = stepLight(st.id);
+              return (
+                <button
+                  key={st.id}
+                  type="button"
+                  onClick={() => go(i)}
+                  className={`relative flex flex-col items-center gap-1 rounded-xl px-1 py-2.5 text-[10px] font-semibold transition sm:text-xs ${
+                    active ? "bg-blue-50 text-blue-700 ring-2 ring-blue-600" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  {st.id === "repairs" ? <ClipboardList className="size-6" /> : <ShopIcon name={st.id} className="size-6" />}
+                  <span className="sm:hidden">{st.short}</span>
+                  <span className="hidden sm:inline">{st.label}</span>
+                  {light !== "none" && <span className={`absolute right-1.5 top-1.5 size-2.5 rounded-full ring-2 ring-white ${LIGHT_META[light].dot}`} />}
+                </button>
+              );
+            })}
+          </div>
+
+          <div key={current.id} className="anim-fade-up">
+            {current.id === "tires" && <TiresStep {...props} />}
+            {current.id === "brakes" && <BrakesStep {...props} />}
+            {current.id === "suspension" && <SuspensionStep {...props} />}
+            {current.id === "alignment" && <AlignmentStep {...props} />}
+            {current.id === "tpms" && <TpmsStep {...props} />}
+            {current.id === "repairs" && <RepairsStep {...props} team={state.team} />}
+          </div>
+
+          <div className="sticky bottom-24 z-20 md:bottom-4">
+            <div className="grid grid-cols-2 gap-3 rounded-2xl bg-white/90 p-2 shadow-lg ring-1 ring-slate-200 backdrop-blur">
+              <button
+                type="button"
+                onClick={() => (step === 0 ? router.push(`/jobs/${job.id}`) : go(step - 1))}
+                className="flex h-12 items-center justify-center gap-1 rounded-xl bg-slate-100 font-semibold text-slate-700 hover:bg-slate-200"
+              >
+                <ChevronLeft className="size-5" /> Back
+              </button>
+              {isLast ? (
+                <button type="button" onClick={finish} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 font-bold text-white shadow-sm hover:bg-emerald-700">
+                  <Check className="size-5" /> Complete Inspection
+                </button>
+              ) : (
+                <button type="button" onClick={() => go(step + 1)} className="flex h-12 items-center justify-center gap-1 rounded-xl bg-blue-600 font-semibold text-white shadow-sm hover:bg-blue-700">
+                  Next: {STEPS[step + 1].label} <ChevronRight className="size-5" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </Card>
 
-      {ins.completedAt && (
-        <Link href={`/inspections/${job.id}/complete`} className="flex items-center gap-3 rounded-2xl bg-emerald-50 p-3 text-sm text-emerald-800 ring-1 ring-emerald-200">
-          <CheckCircle2 className="size-5 shrink-0" />
-          <span className="flex-1">Completed at {fmtTime(ins.completedAt)}. Edits update the customer report.</span>
-          <span className="font-semibold">Summary →</span>
-        </Link>
-      )}
-
-      {/* Step tabs */}
-      <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
-        {STEPS.map((st, i) => {
-          const active = i === step;
-          const light = stepLight(st.id);
-          return (
-            <button
-              key={st.id}
-              type="button"
-              onClick={() => go(i)}
-              className={`relative flex flex-col items-center gap-1 rounded-xl px-1 py-2.5 text-[10px] font-semibold transition sm:text-xs ${
-                active ? "bg-blue-50 text-blue-700 ring-2 ring-blue-600" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              {st.id === "repairs" ? <ClipboardList className="size-6" /> : <ShopIcon name={st.id} className="size-6" />}
-              <span className="sm:hidden">{st.short}</span>
-              <span className="hidden sm:inline">{st.label}</span>
-              {light !== "none" && <span className={`absolute right-1.5 top-1.5 size-2.5 rounded-full ring-2 ring-white ${LIGHT_META[light].dot}`} />}
-            </button>
-          );
-        })}
-      </div>
-
-      <div key={current.id} className="anim-fade-up">
-        {current.id === "tires" && <TiresStep {...props} />}
-        {current.id === "brakes" && <BrakesStep {...props} />}
-        {current.id === "suspension" && <SuspensionStep {...props} />}
-        {current.id === "alignment" && <AlignmentStep {...props} />}
-        {current.id === "tpms" && <TpmsStep {...props} />}
-        {current.id === "repairs" && <RepairsStep {...props} team={state.team} />}
-      </div>
-
-      {/* Bottom navigation */}
-      <div className="sticky bottom-24 z-20 md:bottom-4">
-        <div className="grid grid-cols-2 gap-3 rounded-2xl bg-white/90 p-2 shadow-lg ring-1 ring-slate-200 backdrop-blur">
-          <button
-            type="button"
-            onClick={() => (step === 0 ? router.push(`/jobs/${job.id}`) : go(step - 1))}
-            className="flex h-12 items-center justify-center gap-1 rounded-xl bg-slate-100 font-semibold text-slate-700 hover:bg-slate-200"
-          >
-            <ChevronLeft className="size-5" /> Back
-          </button>
-          {isLast ? (
-            <button type="button" onClick={finish} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 font-bold text-white shadow-sm hover:bg-emerald-700">
-              <Check className="size-5" /> Complete Inspection
-            </button>
-          ) : (
-            <button type="button" onClick={() => go(step + 1)} className="flex h-12 items-center justify-center gap-1 rounded-xl bg-blue-600 font-semibold text-white shadow-sm hover:bg-blue-700">
-              Next: {STEPS[step + 1].label} <ChevronRight className="size-5" />
-            </button>
-          )}
+        <div className="space-y-4">
+          <InfoPanel
+            title={SECTION_EXPLAINERS[current.id as Section]?.title ?? "Recommended repairs"}
+            text={current.id === "repairs" ? "This final step turns the measurements into customer-facing repair priorities. Confirm what is OK, what is Soon, what can wait, and what needs attention now." : SECTION_EXPLAINERS[current.id as Section].text}
+            tip={current.id === "repairs" ? "The customer report and the estimate both depend on these choices." : SECTION_EXPLAINERS[current.id as Section].customerText}
+          />
+          <Card className="anim-fade-up p-5">
+            <h3 className="font-semibold text-slate-950">Technician reminder</h3>
+            <ul className="mt-3 space-y-2 text-sm text-slate-600">
+              <li>• Enter the measurement first, then confirm the status colour.</li>
+              <li>• Add at least one photo whenever the result is Soon, Recommended or Replace.</li>
+              <li>• Write the note the way the customer should understand it.</li>
+              <li>• Finish with the repairs step so the report summary reads clearly.</li>
+            </ul>
+          </Card>
         </div>
       </div>
 
@@ -234,8 +253,6 @@ export default function InspectionWizardPage() {
     </div>
   );
 }
-
-// ---------- Shared bits ----------
 
 function StepHeader({
   section,
@@ -347,8 +364,6 @@ const numCls =
 
 const setNote = (update: StepProps["update"], section: Section) => (v: string) =>
   update((i) => ({ ...i, notes: { ...i.notes, [section]: v } }));
-
-// ---------- Steps ----------
 
 function TiresStep({ ins, s, update, capture, count }: StepProps) {
   const setCorner = (c: Corner, patch: Partial<Inspection["tires"][Corner]>) =>
