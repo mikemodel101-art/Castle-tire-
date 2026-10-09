@@ -1,91 +1,108 @@
+"use client";
+
 import Link from "next/link";
-import { cookies } from "next/headers";
+import { AlertTriangle, ArrowRight, CheckCircle2, Clock, MessageSquare, Plus, Receipt, Send } from "lucide-react";
+import { Avatar, Card, JobStatusBadge, PageHeader, PlateBadge, ProgressBar } from "@/components/ui";
+import { useMe, useShop } from "@/lib/store";
 import {
-  AlertTriangle,
-  ArrowRight,
-  Camera,
-  CheckCircle2,
-  ClipboardCheck,
-  Clock,
-  MapPin,
-  Plus,
-  Search,
-} from "lucide-react";
-import { Avatar, Card, EmptyState, PageHeader, ProgressBar } from "@/components/ui";
-import { SESSION_COOKIE, memberForEmail } from "@/lib/auth";
-import { CUSTOMERS, INSPECTIONS, JOBS, MEDIA, PHOTOS, REPORTS, STAGES, TEAM, TODAY, VEHICLES } from "@/lib/data";
-import { findCustomer, findVehicle, findMember, formatDate, sectionStatuses, vehicleLabel } from "@/lib/utils";
+  byId,
+  estimateTotals,
+  fmtDate,
+  fmtTime,
+  firstName,
+  jobGroup,
+  money,
+  relStamp,
+  slotMinutes,
+  vehicleLabel,
+  vehiclePhoto,
+} from "@/lib/utils";
 
-export default async function DashboardPage() {
-  const jar = await cookies();
-  const me = memberForEmail(jar.get(SESSION_COOKIE)?.value);
-  const firstName = me?.name.split(" ")[0] ?? "there";
+export default function DashboardPage() {
+  const state = useShop();
+  const me = useMe();
+  const today = state.anchorDay;
 
-  const today = JOBS.filter((j) => j.date === TODAY);
-  const inProgress = today.filter((j) => j.stage >= 1 && j.stage <= 3);
-  const awaitingApproval = today.filter((j) => j.stage === 2);
-  const completed = today.filter((j) => j.stage === 5);
-  const unassigned = today.filter((j) => !j.assignedTo);
-  const mediaToday = MEDIA.filter((m) => m.takenAt.startsWith(TODAY)).length;
+  const todays = state.jobs.filter((j) => j.date === today).sort((a, b) => slotMinutes(a.time) - slotMinutes(b.time));
+  const waiting = todays.filter((j) => j.status === "waiting");
+  const progress = todays.filter((j) => jobGroup(j.status) === "progress");
+  const completed = todays.filter((j) => j.status === "completed");
+  const readyReports = state.reports.filter((r) => !r.sentAt);
+  const awaiting = state.estimates.filter((e) => e.status === "sent");
+  const recent = [...state.messages].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 4);
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
-  const readyReports = REPORTS.filter((r) => r.status === "Ready");
-  const redInspections = INSPECTIONS.filter((i) => sectionStatuses(i).overall === "red");
+  const firstWaiting = waiting[0];
+  const inInspection = todays.find((j) => j.status === "inspection" || j.status === "accepted");
+  const inspected = todays.find((j) => j.status === "inspection_complete") ?? todays.find((j) => j.status !== "waiting");
+  const steps = [
+    { n: 1, title: "Create a New Vehicle", text: "Customer, vehicle & complaint", href: "/jobs/new" },
+    { n: 2, title: "Today's Jobs", text: "Waiting · In Progress · Completed", href: "/jobs" },
+    { n: 3, title: "Technician Accepts Job", text: firstWaiting ? `Try ${firstWaiting.id}` : "Accept from the job card", href: firstWaiting ? `/jobs/${firstWaiting.id}` : "/jobs" },
+    { n: 4, title: "Digital Inspection", text: "Tires, brakes, suspension, alignment, TPMS", href: inInspection ? `/inspections/${inInspection.id}` : "/inspections" },
+    { n: 5, title: "Add Photos & Measurements", text: "Tap the camera on any tire", href: inInspection ? `/inspections/${inInspection.id}` : "/media" },
+    { n: 6, title: "Inspection Complete", text: "Send to customer · Create estimate", href: inspected ? `/inspections/${inspected.id}/complete` : "/reports" },
+  ];
 
   const stats = [
-    { label: "Vehicles today", value: today.length, hint: `${unassigned.length} unassigned`, tone: "text-slate-950" },
-    { label: "In progress", value: inProgress.length, hint: "Inspection → repair", tone: "text-amber-600" },
-    { label: "Awaiting approval", value: awaitingApproval.length, hint: "Estimates sent", tone: "text-sky-600" },
-    { label: "Completed", value: completed.length, hint: `${mediaToday} media uploaded`, tone: "text-emerald-600" },
+    { label: "Vehicles today", value: todays.length, hint: `${todays.filter((j) => !j.assignedTo).length} unassigned`, tone: "text-slate-950" },
+    { label: "Waiting", value: waiting.length, hint: "Ready to accept", tone: "text-amber-600" },
+    { label: "In progress", value: progress.length, hint: "Inspection → approval", tone: "text-blue-600" },
+    { label: "Completed", value: completed.length, hint: `${state.media.filter((m) => m.takenAt.startsWith(today)).length} photos & videos today`, tone: "text-emerald-600" },
   ];
+  const pct = (completed.length / Math.max(todays.length, 1)) * 100;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow={formatDate(TODAY)}
-        title={`Welcome back, ${firstName}`}
-        subtitle="Here's what's happening on the shop floor today."
+        eyebrow={fmtDate(today, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+        title={`${greeting}, ${firstName(me.name)}`}
+        subtitle="Here's the shop floor right now."
         actions={
           <>
-            <Link
-              href="/jobs"
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800"
-            >
-              <Plus className="size-4" /> New job
+            <Link href="/jobs/new" className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-brand-700">
+              <Plus className="size-4" /> New Vehicle
             </Link>
-            <Link
-              href="/customers"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:bg-slate-50"
-            >
-              <Search className="size-4" /> Find customer
+            <Link href="/jobs" className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 ring-1 ring-slate-200 transition hover:-translate-y-0.5 hover:bg-slate-50">
+              Today&apos;s Jobs <ArrowRight className="size-4" />
             </Link>
           </>
         }
       />
 
-      {/* Hero banner */}
-      <div className="anim-fade-up relative overflow-hidden rounded-3xl bg-slate-950 text-white shadow-lg" style={{ animationDelay: "0.1s" }}>
-        <img src={PHOTOS.carOnLift} alt="Vehicle on a service lift" className="absolute inset-0 h-full w-full object-cover opacity-40" />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent" />
-        <div className="relative flex flex-col gap-4 p-6 sm:p-8 md:max-w-xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">Today&apos;s shop goal</p>
-          <h2 className="text-2xl font-bold leading-tight sm:text-3xl">
-            {today.length} vehicles on the schedule. {completed.length} done, {inProgress.length} moving through the bays.
-          </h2>
-          <div className="max-w-md">
-            <div className="mb-2 flex justify-between text-xs text-slate-300">
-              <span>Completion</span>
-              <span>{Math.round((completed.length / Math.max(today.length, 1)) * 100)}%</span>
-            </div>
-            <ProgressBar value={(completed.length / Math.max(today.length, 1)) * 100} className="bg-white/10" />
-          </div>
+      {/* Workflow strip */}
+      <Card className="anim-fade-up overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
+          <h2 className="font-semibold text-slate-950">Shop workflow</h2>
+          <span className="text-xs text-slate-500">Tap a step to walk through it</span>
         </div>
-      </div>
+        <ol className="no-scrollbar flex snap-x gap-3 overflow-x-auto p-4">
+          {steps.map((s, i) => (
+            <li key={s.n} className="min-w-[200px] flex-1 snap-start">
+              <Link
+                href={s.href}
+                className="group flex h-full items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md"
+              >
+                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-600 text-sm font-black text-white shadow-sm shadow-brand-600/30">
+                  {s.n}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold leading-tight text-slate-900">{s.title}</span>
+                  <span className="mt-0.5 block text-xs text-slate-500">{s.text}</span>
+                </span>
+                {i < steps.length - 1 && <ArrowRight className="ml-auto mt-1 hidden size-4 shrink-0 text-blue-500 xl:block" />}
+              </Link>
+            </li>
+          ))}
+        </ol>
+      </Card>
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {stats.map((s, i) => (
-          <Card key={s.label} className="anim-fade-up p-4 sm:p-5" >
-            <div style={{ animationDelay: `${0.15 + i * 0.08}s` }}>
+          <Card key={s.label} className="anim-fade-up p-4 sm:p-5">
+            <div style={{ animationDelay: `${0.1 + i * 0.06}s` }}>
               <p className="text-xs font-medium text-slate-500">{s.label}</p>
               <p className={`mt-2 text-3xl font-bold tracking-tight ${s.tone}`}>{s.value}</p>
               <p className="mt-1 text-xs text-slate-500">{s.hint}</p>
@@ -96,173 +113,162 @@ export default async function DashboardPage() {
 
       <div className="grid gap-6 xl:grid-cols-3">
         {/* Schedule */}
-        <Card className="anim-fade-up xl:col-span-2" >
+        <Card className="anim-fade-up xl:col-span-2">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <div>
               <h3 className="font-semibold text-slate-950">Today&apos;s schedule</h3>
-              <p className="text-xs text-slate-500">{today.length} appointments · tap a job to open it</p>
+              <p className="text-xs text-slate-500">{Math.round(pct)}% complete</p>
             </div>
-            <Link href="/jobs" className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-800">
-              Job board <ArrowRight className="size-4" />
+            <Link href="/jobs" className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700">
+              All jobs <ArrowRight className="size-4" />
             </Link>
           </div>
-
-          {today.length === 0 ? (
-            <div className="p-5">
-              <EmptyState title="No vehicles scheduled" text="New appointments will show up here." />
-            </div>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {today.map((job, i) => {
-                const customer = job.adHoc?.customer ?? findCustomer(job.customerId);
-                const vehicle = job.adHoc?.vehicle ?? findVehicle(job.vehicleId);
-                const tech = findMember(job.assignedTo);
-                const seeded = JOBS.some((j) => j.id === job.id);
-                const row = (
-                  <div className="grid grid-cols-[auto_1fr] gap-4 px-5 py-4 transition hover:bg-slate-50/80 sm:grid-cols-[88px_1fr_auto]">
-                    <div className="flex flex-col">
-                      <span className="flex items-center gap-1 text-sm font-semibold text-slate-900">
-                        <Clock className="size-3.5 text-slate-400" />
-                        {job.time}
-                      </span>
-                      <span className="mt-1 text-[11px] text-slate-400">{job.id}</span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-slate-900">
-                        {customer?.name} <span className="font-normal text-slate-500">· {vehicle ? vehicleLabel(vehicle) : ""}</span>
+          <div className="px-5 pt-3">
+            <ProgressBar value={pct} />
+          </div>
+          <ul className="divide-y divide-slate-100">
+            {todays.map((job) => {
+              const customer = byId(state.customers, job.customerId);
+              const vehicle = byId(state.vehicles, job.vehicleId);
+              const tech = byId(state.team, job.assignedTo);
+              if (!customer || !vehicle) return null;
+              return (
+                <li key={job.id}>
+                  <Link href={`/jobs/${job.id}`} className="flex items-center gap-3 px-5 py-3.5 transition hover:bg-slate-50/80">
+                    <img src={vehiclePhoto(vehicle)} alt="" className="h-12 w-16 shrink-0 rounded-lg object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-slate-900">{vehicleLabel(vehicle)}</p>
+                      <p className="truncate text-xs text-slate-500">
+                        {customer.name} · {job.complaint}
                       </p>
-                      <p className="mt-0.5 truncate text-sm text-slate-600">{job.service}</p>
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-slate-700">{vehicle?.plate}</span>
-                        <span className="flex items-center gap-1">
-                          <span className="size-1.5 rounded-full bg-amber-400" />
-                          {STAGES[job.stage]}
-                        </span>
-                        {!job.assignedTo && <span className="font-medium text-rose-600">Unassigned</span>}
-                        {job.assignedTo && !job.accepted && <span className="font-medium text-amber-700">Awaiting accept</span>}
-                      </div>
                     </div>
-                    <div className="col-span-2 flex items-center justify-between gap-3 sm:col-span-1 sm:justify-end">
-                      {tech ? (
-                        <span className="flex items-center gap-2 text-xs text-slate-600">
-                          <Avatar initials={tech.initials} size="sm" />
-                          <span className="hidden lg:inline">{tech.name}</span>
-                        </span>
-                      ) : (
-                        <span className="text-xs text-slate-400">No tech</span>
-                      )}
-                      {seeded && <ArrowRight className="size-4 text-slate-300" />}
+                    <div className="hidden flex-col items-end gap-1 sm:flex">
+                      <PlateBadge plate={vehicle.plate} />
                     </div>
-                  </div>
-                );
-                return (
-                  <li key={job.id} className="anim-fade-up" style={{ animationDelay: `${0.2 + i * 0.05}s` }}>
-                    {seeded ? <Link href={`/jobs/${job.id}`} className="block">{row}</Link> : row}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+                    <div className="flex w-28 flex-col items-end gap-1">
+                      <JobStatusBadge status={job.status} />
+                      <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                        <Clock className="size-3" /> {job.time}
+                        {tech && <span className="ml-1 font-semibold text-slate-700">{tech.name.split(" ")[0]}</span>}
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </Card>
 
-        {/* Right column */}
         <div className="space-y-6">
-          <Card className="anim-fade-up p-5" >
+          <Card className="anim-fade-up p-5">
             <h3 className="font-semibold text-slate-950">Needs attention</h3>
-            <ul className="mt-4 space-y-3">
+            <ul className="mt-4 space-y-2.5">
               {readyReports.map((r) => {
-                const job = JOBS.find((j) => j.id === r.jobId);
-                const customer = findCustomer(job?.customerId ?? "");
+                const job = byId(state.jobs, r.jobId);
+                const customer = job ? byId(state.customers, job.customerId) : undefined;
                 return (
-                  <li key={r.id}>
-                    <Link href="/reports" className="flex items-start gap-3 rounded-xl bg-sky-50 p-3 ring-1 ring-sky-100 transition hover:bg-sky-100/70">
-                      <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-sky-600" />
+                  <li key={r.code}>
+                    <Link href={`/inspections/${r.jobId}/complete`} className="flex items-start gap-3 rounded-xl bg-blue-50 p-3 ring-1 ring-blue-100 transition hover:bg-blue-100/70">
+                      <Send className="mt-0.5 size-5 shrink-0 text-blue-600" />
                       <span className="text-sm">
-                        <span className="font-semibold text-slate-900">Report ready to send</span>
-                        <span className="block text-slate-600">{customer?.name} · {r.id}</span>
+                        <span className="font-semibold text-slate-900">Inspection ready to send</span>
+                        <span className="block text-slate-600">{customer?.name} · {r.jobId}</span>
                       </span>
                     </Link>
                   </li>
                 );
               })}
-              {redInspections.map((i) => {
-                const job = JOBS.find((j) => j.id === i.jobId);
-                const vehicle = findVehicle(job?.vehicleId ?? "");
+              {awaiting.map((e) => {
+                const job = byId(state.jobs, e.jobId);
+                const customer = job ? byId(state.customers, job.customerId) : undefined;
                 return (
-                  <li key={i.id}>
-                    <Link href={`/inspections/${i.jobId}`} className="flex items-start gap-3 rounded-xl bg-rose-50 p-3 ring-1 ring-rose-100 transition hover:bg-rose-100/70">
-                      <AlertTriangle className="mt-0.5 size-5 shrink-0 text-rose-600" />
+                  <li key={e.id}>
+                    <Link href={`/estimates/${e.id}`} className="flex items-start gap-3 rounded-xl bg-amber-50 p-3 ring-1 ring-amber-100 transition hover:bg-amber-100/70">
+                      <Receipt className="mt-0.5 size-5 shrink-0 text-amber-600" />
                       <span className="text-sm">
-                        <span className="font-semibold text-slate-900">Safety-critical repairs found</span>
-                        <span className="block text-slate-600">{vehicle ? vehicleLabel(vehicle) : ""} · {i.jobId}</span>
+                        <span className="font-semibold text-slate-900">Estimate awaiting approval</span>
+                        <span className="block text-slate-600">
+                          {customer?.name} · {money(estimateTotals(e, state.settings.taxRate).total, true)}
+                        </span>
                       </span>
                     </Link>
                   </li>
                 );
               })}
-              {unassigned.length > 0 && (
+              {waiting.filter((j) => !j.assignedTo).length > 0 && (
                 <li>
-                  <Link href="/jobs" className="flex items-start gap-3 rounded-xl bg-amber-50 p-3 ring-1 ring-amber-100 transition hover:bg-amber-100/70">
-                    <Clock className="mt-0.5 size-5 shrink-0 text-amber-600" />
+                  <Link href="/jobs" className="flex items-start gap-3 rounded-xl bg-brand-50 p-3 ring-1 ring-brand-100 transition hover:bg-brand-100/60">
+                    <AlertTriangle className="mt-0.5 size-5 shrink-0 text-brand-600" />
                     <span className="text-sm">
-                      <span className="font-semibold text-slate-900">{unassigned.length} unassigned jobs</span>
-                      <span className="block text-slate-600">Claim one from the job board</span>
+                      <span className="font-semibold text-slate-900">{waiting.filter((j) => !j.assignedTo).length} vehicles waiting for a tech</span>
+                      <span className="block text-slate-600">Accept a job from Today&apos;s Jobs</span>
                     </span>
                   </Link>
+                </li>
+              )}
+              {readyReports.length + awaiting.length === 0 && waiting.length === 0 && (
+                <li className="flex items-center gap-2 text-sm text-emerald-700">
+                  <CheckCircle2 className="size-4" /> All caught up
                 </li>
               )}
             </ul>
           </Card>
 
-          <Card className="anim-fade-up p-5" >
-            <h3 className="font-semibold text-slate-950">Team on shift</h3>
+          <Card className="anim-fade-up p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-slate-950">Recent texts</h3>
+              <Link href="/messages" className="text-sm font-semibold text-blue-600">Messages</Link>
+            </div>
             <ul className="mt-4 space-y-3">
-              {TEAM.map((m) => {
-                const count = today.filter((j) => j.assignedTo === m.id).length;
+              {recent.map((m) => {
+                const c = byId(state.customers, m.customerId);
                 return (
-                  <li key={m.id} className="flex items-center gap-3">
-                    <Avatar initials={m.initials} tone="amber" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-slate-900">{m.name}</p>
-                      <p className="truncate text-xs text-slate-500">{m.role}</p>
-                    </div>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-                      {count} job{count === 1 ? "" : "s"}
+                  <li key={m.id} className="flex items-start gap-3">
+                    <span className={`mt-0.5 grid size-8 shrink-0 place-items-center rounded-full ${m.direction === "in" ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"}`}>
+                      <MessageSquare className="size-4" />
                     </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-900">
+                        {m.direction === "in" ? c?.name : `To ${c?.name}`}
+                      </p>
+                      <p className="line-clamp-1 text-xs text-slate-500">{m.body}</p>
+                      <p className="text-[11px] text-slate-400">{relStamp(m.at, today)}</p>
+                    </div>
                   </li>
                 );
               })}
             </ul>
           </Card>
 
-          <Card className="anim-fade-up p-5" >
-            <h3 className="font-semibold text-slate-950">Quick actions</h3>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              {[
-                { href: "/inspections", label: "Start inspection", icon: ClipboardCheck },
-                { href: "/media", label: "Upload photo", icon: Camera },
-                { href: "/customers", label: "Find vehicle", icon: MapPin },
-                { href: "/reports", label: "Send report", icon: CheckCircle2 },
-              ].map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="flex flex-col items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm font-medium text-slate-800 transition hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50/60"
-                >
-                  <span className="grid size-8 place-items-center rounded-lg bg-slate-950 text-amber-300">
-                    <Icon className="size-4" />
-                  </span>
-                  {label}
-                </Link>
-              ))}
-            </div>
+          <Card className="anim-fade-up p-5">
+            <h3 className="font-semibold text-slate-950">Team on shift</h3>
+            <ul className="mt-4 space-y-3">
+              {state.team.map((m) => {
+                const active = todays.filter((j) => j.assignedTo === m.id && j.status !== "completed");
+                const last = todays
+                  .flatMap((j) => j.timeline)
+                  .filter((t) => t.by === m.id)
+                  .sort((a, b) => b.at.localeCompare(a.at))[0];
+                return (
+                  <li key={m.id} className="flex items-center gap-3">
+                    <Avatar initials={m.initials} tone={m.id === me.id ? "brand" : "dark"} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-slate-900">{m.name}</p>
+                      <p className="truncate text-xs text-slate-500">
+                        {m.role}
+                        {last ? ` · active ${fmtTime(last.at)}` : ""}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                      {active.length} open
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
           </Card>
         </div>
       </div>
-
-      <p className="text-center text-xs text-slate-400">
-        Demo data · {CUSTOMERS.length} customers · {VEHICLES.length} vehicles · no database connected
-      </p>
     </div>
   );
 }

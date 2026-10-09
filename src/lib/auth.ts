@@ -15,10 +15,10 @@ export const DEMO_ACCOUNTS = [
   {
     key: "technician",
     label: "Technician",
-    description: "Field access · Carlos Rivera",
+    description: "Shop floor · Luis Ortega",
     email: "tech@castletire.com",
     password: "Tech2026",
-    memberId: "carlos",
+    memberId: "luis",
   },
 ] as const;
 

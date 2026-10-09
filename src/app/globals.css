@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* Castle Tire Shop brand red */
+@theme {
+  --color-brand-50: #fff1f1;
+  --color-brand-100: #ffe0e1;
+  --color-brand-200: #ffc6c8;
+  --color-brand-300: #ff9ca0;
+  --color-brand-400: #fb626a;
+  --color-brand-500: #ef2d37;
+  --color-brand-600: #d7141f;
+  --color-brand-700: #b40d17;
+  --color-brand-800: #950f18;
+  --color-brand-900: #7c131b;
+  --color-brand-950: #44050a;
+}
+
 /* ---------- Keyframes ---------- */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(18px); }
@@ -16,6 +31,10 @@
 @keyframes slide-in {
   from { opacity: 0; transform: translateX(-18px); }
   to { opacity: 1; transform: none; }
+}
+@keyframes slide-right {
+  from { transform: translateX(-100%); }
+  to { transform: none; }
 }
 @keyframes float {
   0%, 100% { transform: translateY(0) rotate(0deg); }
@@ -45,28 +64,36 @@
 @keyframes road {
   to { background-position: 80px 0; }
 }
-@keyframes pulse-dot {
-  0% { box-shadow: 0 0 0 0 currentColor; }
-  70% { box-shadow: 0 0 0 8px transparent; }
-  100% { box-shadow: 0 0 0 0 transparent; }
-}
 @keyframes rise-bar {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
 }
+@keyframes ping-ring {
+  0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.45); }
+  70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+@keyframes pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
 
 /* ---------- Utility classes ---------- */
-.anim-fade-up { animation: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.anim-fade-up { animation: fade-up 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .anim-fade-in { animation: fade-in 0.8s ease both; }
 .anim-word { opacity: 0; animation: word-rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
 .anim-slide-in { opacity: 0; animation: slide-in 0.6s ease-out forwards; }
+.anim-drawer { animation: slide-right 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .anim-float { animation: float 9s ease-in-out infinite; }
 .anim-spin-slow { animation: spin-slow 24s linear infinite; }
 .anim-kenburns { animation: kenburns 22s ease-out both; }
 .anim-shake { animation: shake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
 .anim-gradient { background-size: 200% 200%; animation: gradient-pan 8s ease infinite; }
+.anim-pop { animation: pop 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.anim-ping-ring { animation: ping-ring 1.8s infinite; }
 .anim-road {
-  background-image: repeating-linear-gradient(90deg, rgba(251, 191, 36, 0.9) 0 40px, transparent 40px 80px);
+  background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.85) 0 40px, transparent 40px 80px);
   background-size: 80px 100%;
   animation: road 0.9s linear infinite;
   height: 6px;
@@ -75,21 +102,31 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.45) 50%, transparent 70%);
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.4) 50%, transparent 70%);
   animation: shimmer 2.8s ease-in-out infinite;
   pointer-events: none;
 }
 .anim-bar { transform-origin: left; animation: rise-bar 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-.page-enter { animation: fade-up 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-.live-dot { animation: pulse-dot 2s infinite; }
+.page-enter { animation: fade-up 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+.font-handwriting { font-family: "Segoe Print", "Bradley Hand", "Chalkboard SE", "Comic Sans MS", cursive; }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
 
 html { -webkit-tap-highlight-color: transparent; }
 
+/* number inputs: hide spinners so tread / mm fields stay compact on phones */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
 @media print {
+  @page { size: letter landscape; margin: 0.3in; }
+  html, body { background: #fff !important; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   .no-print { display: none !important; }
+  .page-enter, .anim-fade-up { animation: none !important; opacity: 1 !important; transform: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

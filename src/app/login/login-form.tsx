@@ -2,11 +2,12 @@
 
 import { useActionState, useState } from "react";
 import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, ShieldCheck, Sparkles } from "lucide-react";
+import { CastleLogo } from "@/components/brand";
 import { DEMO_ACCOUNTS } from "@/lib/auth";
 import { login } from "./actions";
 
 const inputClass =
-  "h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-[15px] text-slate-900 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20";
+  "h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-[15px] text-slate-900 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15";
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(login, undefined);
@@ -24,34 +25,23 @@ export function LoginForm() {
   }
 
   return (
-    <div className="anim-fade-up rounded-3xl bg-white p-8 shadow-2xl shadow-slate-900/10 ring-1 ring-slate-200 sm:p-10">
-      {/* Mobile brand header */}
-      <div className="mb-6 flex items-center gap-3 lg:hidden">
-        <span className="anim-spin-slow grid size-10 place-items-center rounded-xl bg-gradient-to-br from-amber-300 to-orange-500">
-          <svg viewBox="0 0 48 48" className="size-6 text-slate-900" fill="none" aria-hidden="true">
-            <circle cx="24" cy="24" r="17" stroke="currentColor" strokeWidth="5" />
-            <circle cx="24" cy="24" r="6" fill="currentColor" />
-          </svg>
-        </span>
-        <div>
-          <p className="font-semibold text-slate-900">Castle Tire Shop</p>
-          <p className="text-xs text-slate-500">Shop operations</p>
-        </div>
+    <div className="anim-fade-up rounded-3xl bg-white p-7 shadow-2xl shadow-slate-900/10 ring-1 ring-slate-200 sm:p-10">
+      <div className="mb-6 lg:hidden">
+        <CastleLogo tagline className="h-14 w-auto" />
       </div>
 
       <div className="anim-fade-up" style={{ animationDelay: "0.1s" }}>
         <h2 className="text-3xl font-bold tracking-tight text-slate-950">Welcome back</h2>
-        <p className="mt-2 text-sm text-slate-600">Sign in to the Castle shop floor with your employee account.</p>
+        <p className="mt-2 text-sm text-slate-600">Sign in with your Castle employee account.</p>
       </div>
 
-      {/* Demo autofill */}
-      <div className="anim-fade-up mt-6 rounded-2xl border border-amber-200 bg-amber-50/70 p-4" style={{ animationDelay: "0.2s" }}>
+      <div className="anim-fade-up mt-6 rounded-2xl border border-brand-100 bg-brand-50/60 p-4" style={{ animationDelay: "0.2s" }}>
         <div className="mb-3 flex items-center justify-between">
-          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-amber-800">
+          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-brand-700">
             <Sparkles className="size-3.5" /> Demo login · tap to autofill
           </p>
           <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-slate-500 ring-1 ring-slate-200">
-            No database
+            Dummy data
           </span>
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
@@ -62,15 +52,13 @@ export function LoginForm() {
                 type="button"
                 key={a.key}
                 onClick={() => autofill(a.key)}
-                className={`group rounded-xl border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
-                  active
-                    ? "border-amber-500 bg-white shadow-md ring-2 ring-amber-400/40"
-                    : "border-slate-200 bg-white/80 hover:border-amber-300"
+                className={`rounded-xl border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                  active ? "border-brand-500 bg-white shadow-md ring-2 ring-brand-400/30" : "border-slate-200 bg-white/80 hover:border-brand-300"
                 }`}
               >
                 <span className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-slate-900">{a.label}</span>
-                  {active && <ShieldCheck className="size-4 text-amber-600" />}
+                  {active && <ShieldCheck className="size-4 text-brand-600" />}
                 </span>
                 <span className="mt-0.5 block truncate text-xs text-slate-500">{a.email}</span>
                 <span className="mt-1 block text-[11px] text-slate-400">{a.description}</span>
@@ -102,11 +90,9 @@ export function LoginForm() {
         </div>
 
         <div className="anim-fade-up" style={{ animationDelay: "0.4s" }}>
-          <div className="mb-1.5 flex items-center justify-between">
-            <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-              Password
-            </label>
-          </div>
+          <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">
+            Password
+          </label>
           <div className="relative">
             <Lock className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-slate-400" />
             <input
@@ -132,11 +118,7 @@ export function LoginForm() {
         </div>
 
         {state?.error && (
-          <div
-            key={state.error}
-            role="alert"
-            className="anim-shake rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700 ring-1 ring-rose-200"
-          >
+          <div key={state.error} role="alert" className="anim-shake rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700 ring-1 ring-rose-200">
             {state.error}
           </div>
         )}
@@ -145,7 +127,7 @@ export function LoginForm() {
           <button
             type="submit"
             disabled={pending}
-            className="anim-shimmer anim-gradient relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 text-[15px] font-semibold text-slate-950 shadow-lg shadow-amber-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-[0.99] disabled:cursor-wait disabled:opacity-80"
+            className="anim-shimmer anim-gradient group relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-700 text-[15px] font-semibold text-white shadow-lg shadow-brand-600/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-[0.99] disabled:cursor-wait disabled:opacity-80"
           >
             {pending ? (
               <>
@@ -154,7 +136,7 @@ export function LoginForm() {
               </>
             ) : (
               <>
-                Sign in to dashboard
+                Sign in to the shop
                 <ArrowRight className="size-5 transition-transform group-hover:translate-x-1" />
               </>
             )}
@@ -163,7 +145,7 @@ export function LoginForm() {
       </form>
 
       <p className="anim-fade-up mt-6 text-center text-xs text-slate-500" style={{ animationDelay: "0.6s" }}>
-        Need an account? Ask the shop manager to create one.
+        Works on iPhone, Android, tablets and Windows PCs. Add it to your home screen like an app.
       </p>
     </div>
   );

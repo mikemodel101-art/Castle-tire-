@@ -1,12 +1,9 @@
 import type { ReactNode } from "react";
-import type { CheckStatus } from "@/lib/data";
-import { STAGES } from "@/lib/data";
-import { statusMeta } from "@/lib/utils";
+import { JOB_STATUS_LABEL, type JobStatus, type Light } from "@/lib/data";
+import { LIGHT_META, jobGroup } from "@/lib/utils";
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/80 ${className}`}>{children}</div>
-  );
+  return <div className={`rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/80 ${className}`}>{children}</div>;
 }
 
 export function PageHeader({
@@ -15,15 +12,15 @@ export function PageHeader({
   subtitle,
   actions,
 }: {
-  eyebrow?: string;
-  title: string;
-  subtitle?: string;
+  eyebrow?: ReactNode;
+  title: ReactNode;
+  subtitle?: ReactNode;
   actions?: ReactNode;
 }) {
   return (
     <div className="anim-fade-up flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        {eyebrow && <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-600">{eyebrow}</p>}
+      <div className="min-w-0">
+        {eyebrow && <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">{eyebrow}</p>}
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-slate-600">{subtitle}</p>}
       </div>
@@ -32,60 +29,87 @@ export function PageHeader({
   );
 }
 
-export function StatusBadge({ status, className = "" }: { status: CheckStatus; className?: string }) {
-  const meta = statusMeta(status);
+export function LightChip({
+  light,
+  label,
+  className = "",
+  size = "md",
+}: {
+  light: Light;
+  label: string;
+  className?: string;
+  size?: "sm" | "md" | "lg";
+}) {
+  const sizes = { sm: "px-2 py-0.5 text-[11px]", md: "px-2.5 py-1 text-xs", lg: "px-3.5 py-1.5 text-sm" };
   return (
     <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${meta.badge} ${className}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full font-semibold ring-1 ring-inset ${sizes[size]} ${LIGHT_META[light].chip} ${className}`}
     >
-      <span className={`size-1.5 rounded-full ${meta.dot}`} />
-      {meta.label}
+      <span className={`size-1.5 rounded-full ${LIGHT_META[light].dot}`} />
+      {label}
     </span>
   );
 }
 
-export function StatusDot({ status }: { status: CheckStatus }) {
-  return <span className={`inline-block size-3 rounded-full ring-2 ring-white ${statusMeta(status).dot}`} />;
-}
-
-export function ProgressBar({ value, className = "" }: { value: number; className?: string }) {
+/** Solid status pill like the mock-up summary ("Soon", "Replace", "Good"). */
+export function SolidChip({ light, label, className = "" }: { light: Light; label: string; className?: string }) {
   return (
-    <div className={`h-2 w-full overflow-hidden rounded-full bg-slate-100 ${className}`}>
-      <div
-        className="anim-bar h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500"
-        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
-      />
-    </div>
+    <span
+      className={`inline-flex min-w-24 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold ${LIGHT_META[light].solid} ${className}`}
+    >
+      {label}
+    </span>
   );
 }
 
-export function StageTracker({ stage }: { stage: number }) {
-  const pct = (stage / (STAGES.length - 1)) * 100;
+export function LightDot({ light, className = "" }: { light: Light; className?: string }) {
+  return <span className={`inline-block size-2.5 shrink-0 rounded-full ${LIGHT_META[light].dot} ${className}`} />;
+}
+
+export function JobStatusBadge({ status, detail = false }: { status: JobStatus; detail?: boolean }) {
+  const group = jobGroup(status);
+  const cls =
+    group === "waiting"
+      ? "bg-amber-100 text-amber-800 ring-amber-500/30"
+      : group === "completed"
+        ? "bg-emerald-100 text-emerald-800 ring-emerald-500/30"
+        : "bg-blue-100 text-blue-800 ring-blue-500/30";
+  const label = group === "waiting" ? "Waiting" : group === "completed" ? "Completed" : "In Progress";
   return (
-    <div>
-      <div className="mb-2 flex items-center justify-between text-xs">
-        <span className="font-semibold text-slate-900">{STAGES[stage]}</span>
-        <span className="text-slate-500">
-          Step {stage + 1} of {STAGES.length}
-        </span>
-      </div>
-      <ProgressBar value={pct} />
-      <div className="mt-2 hidden grid-cols-6 gap-1 text-[10px] leading-tight text-slate-500 sm:grid">
-        {STAGES.map((s, i) => (
-          <span key={s} className={i <= stage ? "font-medium text-slate-800" : ""}>
-            {s}
-          </span>
-        ))}
-      </div>
-    </div>
+    <span className="inline-flex flex-col items-end gap-1">
+      <span className={`whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${cls}`}>{label}</span>
+      {detail && group === "progress" && (
+        <span className="whitespace-nowrap text-[11px] font-medium text-slate-500">{JOB_STATUS_LABEL[status]}</span>
+      )}
+    </span>
   );
 }
 
-export function Avatar({ initials, size = "md", tone = "slate" }: { initials: string; size?: "sm" | "md" | "lg"; tone?: "slate" | "amber" }) {
+export function PlateBadge({ plate, className = "" }: { plate: string; className?: string }) {
+  return (
+    <span
+      className={`inline-flex flex-col items-center rounded-[5px] border border-slate-300 bg-white px-1.5 pb-0.5 pt-px leading-none shadow-sm ${className}`}
+    >
+      <span className="text-[6px] font-bold uppercase tracking-[0.18em] text-brand-600">Mass</span>
+      <span className="font-mono text-[12px] font-bold tracking-wider text-slate-900">{plate}</span>
+    </span>
+  );
+}
+
+export function Avatar({
+  initials,
+  size = "md",
+  tone = "dark",
+}: {
+  initials: string;
+  size?: "sm" | "md" | "lg";
+  tone?: "dark" | "brand" | "light";
+}) {
   const sizes = { sm: "size-7 text-[11px]", md: "size-9 text-xs", lg: "size-12 text-sm" };
   const tones = {
-    slate: "bg-slate-900 text-white",
-    amber: "bg-gradient-to-br from-amber-300 to-orange-500 text-slate-900",
+    dark: "bg-slate-900 text-white",
+    brand: "bg-brand-600 text-white",
+    light: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
   };
   return (
     <span className={`grid shrink-0 place-items-center rounded-full font-semibold ${sizes[size]} ${tones[tone]}`}>
@@ -94,11 +118,96 @@ export function Avatar({ initials, size = "md", tone = "slate" }: { initials: st
   );
 }
 
-export function EmptyState({ title, text }: { title: string; text: string }) {
+export function EmptyState({ title, text, action }: { title: string; text: string; action?: ReactNode }) {
   return (
     <div className="grid place-items-center rounded-2xl border border-dashed border-slate-300 bg-white/60 p-10 text-center">
       <p className="font-semibold text-slate-800">{title}</p>
-      <p className="mt-1 text-sm text-slate-500">{text}</p>
+      <p className="mt-1 max-w-sm text-sm text-slate-500">{text}</p>
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }
+
+export function ProgressBar({ value, className = "", tone = "brand" }: { value: number; className?: string; tone?: "brand" | "blue" }) {
+  return (
+    <div className={`h-2 w-full overflow-hidden rounded-full bg-slate-100 ${className}`}>
+      <div
+        className={`anim-bar h-full rounded-full ${tone === "blue" ? "bg-blue-600" : "bg-gradient-to-r from-brand-500 to-brand-700"}`}
+        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+      />
+    </div>
+  );
+}
+
+export function OkRecToggle({
+  value,
+  onChange,
+}: {
+  value: "ok" | "rec" | null;
+  onChange: (v: "ok" | "rec") => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {(["ok", "rec"] as const).map((v) => {
+        const active = value === v;
+        const on = v === "ok" ? "bg-emerald-500 text-white ring-emerald-500" : "bg-amber-400 text-slate-950 ring-amber-400";
+        return (
+          <button
+            key={v}
+            type="button"
+            onClick={() => onChange(v)}
+            className={`flex h-12 items-center justify-center gap-2 rounded-xl text-sm font-bold ring-2 transition active:scale-[0.98] ${
+              active ? on : "bg-white text-slate-600 ring-slate-200 hover:ring-slate-300"
+            }`}
+          >
+            <span className={`size-3 rounded-sm ${v === "ok" ? "bg-emerald-500" : "bg-amber-400"} ${active ? "ring-2 ring-white" : ""}`} />
+            {v === "ok" ? "OK" : "Rec"}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function Skeleton({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded-xl bg-slate-200/70 ${className}`} />;
+}
+
+export function PageSkeleton() {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Loading">
+      <div className="space-y-2">
+        <Skeleton className="h-3 w-32" />
+        <Skeleton className="h-8 w-72" />
+      </div>
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-24" />
+        ))}
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Skeleton className="h-56" />
+        <Skeleton className="h-56" />
+      </div>
+    </div>
+  );
+}
+
+export const inputCls =
+  "h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3.5 text-[15px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15";
+
+export const labelCls = "mb-1.5 block text-sm font-medium text-slate-700";
+
+export const btn = {
+  primary:
+    "inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] disabled:opacity-60",
+  dark: "inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 active:scale-[0.98]",
+  brand:
+    "inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 active:scale-[0.98]",
+  green:
+    "inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]",
+  outline:
+    "inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 ring-1 ring-slate-200 transition hover:bg-slate-50 active:scale-[0.98]",
+  ghost:
+    "inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900",
+};
