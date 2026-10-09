@@ -4,18 +4,20 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, ClipboardCheck, ExternalLink, FileText, MessageSquare, Phone, Play, Plus } from "lucide-react";
 import { ShopIcon } from "@/components/brand";
-import { Avatar, Card, EmptyState, InfoPanel, JobStatusBadge, LightChip, LightDot, OnboardingBanner, PlateBadge } from "@/components/ui";
-import { APP_JOURNEY } from "@/lib/help";
+import { Avatar, Card, EmptyState, JobStatusBadge, LightChip, LightDot, PlateBadge } from "@/components/ui";
 import { MEDIA_SECTION_LABEL, PRIORITY_LABEL, SECTION_LABEL, SUMMARY_ORDER } from "@/lib/data";
 import { useShop } from "@/lib/store";
+import { customerStats } from "@/lib/insights";
 import {
   PRIORITY_LIGHT,
   byId,
   effectivePriority,
+  estimateTotals,
   firstName,
   fmtMiles,
   fmtShortDate,
   initials,
+  money,
   relStamp,
   sectionChip,
   sectionNote,
@@ -36,6 +38,9 @@ export default function CustomerDetailPage() {
   const vehicles = state.vehicles.filter((v) => v.customerId === c.id);
   const jobs = state.jobs.filter((j) => j.customerId === c.id).sort((a, b) => b.date.localeCompare(a.date));
   const messages = state.messages.filter((m) => m.customerId === c.id).sort((a, b) => b.at.localeCompare(a.at));
+  const stats = customerStats(state, c.id);
+  const estimates = state.estimates.filter((e) => jobs.some((j) => j.id === e.jobId));
+  const approvedValue = estimates.filter((e) => e.status === "approved").reduce((sum, e) => sum + estimateTotals(e, s.taxRate, true).total, 0);
 
   const openRecs = vehicles.flatMap((v) => {
     const latest = jobs
@@ -53,12 +58,6 @@ export default function CustomerDetailPage() {
       <Link href="/customers" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900">
         <ArrowLeft className="size-4" /> All customers
       </Link>
-
-      <OnboardingBanner
-        title="This is the full customer relationship view"
-        text="Use this page when the advisor needs everything in one place: vehicles, open recommendations, previous visits, and communication history."
-        points={[APP_JOURNEY[0].title, APP_JOURNEY[5].title]}
-      />
 
       <Card className="anim-fade-up p-5 sm:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -82,6 +81,29 @@ export default function CustomerDetailPage() {
           </div>
         </div>
       </Card>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Card className="p-4">
+          <p className="text-xs text-slate-500">Lifetime value</p>
+          <p className="mt-1 text-xl font-bold text-emerald-600">{money(Math.round(approvedValue))}</p>
+          <p className="text-xs text-slate-500">{estimates.filter((e) => e.status === "approved").length} approved estimates</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs text-slate-500">Segment</p>
+          <p className="mt-1 text-xl font-bold text-slate-950">{stats.segment}</p>
+          <p className="text-xs text-slate-500">{stats.visits} visits · {stats.vehicles} vehicles</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs text-slate-500">Open recommendations</p>
+          <p className="mt-1 text-xl font-bold text-amber-600">{stats.openRecs}</p>
+          <p className="text-xs text-slate-500">across latest inspections</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs text-slate-500">Last visit</p>
+          <p className="mt-1 text-xl font-bold text-slate-950">{stats.daysSince === null ? "—" : stats.daysSince === 0 ? "Today" : `${stats.daysSince}d ago`}</p>
+          <p className="text-xs text-slate-500">{stats.daysSince !== null && stats.daysSince > 180 ? "Win-back candidate 📞" : "Healthy recency"}</p>
+        </Card>
+      </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
@@ -195,11 +217,6 @@ export default function CustomerDetailPage() {
         </div>
 
         <div className="space-y-5">
-          <InfoPanel
-            title="How to use customer history"
-            text="This page is best for conversations: what work did we do before, what does the car still need, and what did we already text the customer?"
-            tip="Start new work from the correct vehicle card so the next visit stays connected to the same history."
-          />
           <Card className="anim-fade-up p-5">
             <h2 className="font-bold text-slate-950">Open recommendations</h2>
             <p className="text-xs text-slate-500">From each vehicle&apos;s latest inspection</p>

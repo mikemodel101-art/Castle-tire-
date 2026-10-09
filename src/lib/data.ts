@@ -146,31 +146,19 @@ export type Message = {
 };
 
 export type ExpenseType = "income" | "expense";
-export type ExpenseCategory =
-  | "repair_sale"
-  | "tire_sale"
-  | "labor"
-  | "parts_purchase"
-  | "payroll"
-  | "rent"
-  | "utilities"
-  | "tools"
-  | "marketing"
-  | "other";
+export type ExpenseMethod = "cash" | "card" | "check" | "bank" | "other";
 
-export type ExpenseEntry = {
+export type ExpenseTransaction = {
   id: string;
-  type: ExpenseType;
-  category: ExpenseCategory;
-  title: string;
-  amount: number;
   date: string;
-  note: string;
-  vendor?: string;
-  customerId?: string;
+  at: string;
+  type: ExpenseType;
+  category: string;
+  description: string;
+  amount: number;
+  method: ExpenseMethod;
   jobId?: string;
-  method?: "cash" | "card" | "bank" | "check" | "other";
-  createdBy: string;
+  by: string;
 };
 
 export type AlignmentPackage = { price: AlignmentPrice; label: string };
@@ -205,7 +193,7 @@ export type ShopState = {
   reports: Report[];
   estimates: Estimate[];
   messages: Message[];
-  expenses: ExpenseEntry[];
+  expenses: ExpenseTransaction[];
 };
 
 // ---------- Constants ----------
@@ -300,6 +288,37 @@ export const TIME_SLOTS = [
   "07:30 AM", "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM",
   "11:30 AM", "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM", "03:00 PM",
   "03:30 PM", "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM",
+];
+
+export const INCOME_CATEGORIES = [
+  "Labor",
+  "Parts",
+  "Tires",
+  "Alignment",
+  "Inspection fee",
+  "TPMS",
+  "Other income",
+];
+
+export const EXPENSE_CATEGORIES = [
+  "Parts purchase",
+  "Tire inventory",
+  "Rent",
+  "Utilities",
+  "Salaries",
+  "Insurance",
+  "Equipment",
+  "Supplies",
+  "Marketing",
+  "Other",
+];
+
+export const EXPENSE_METHODS: { id: import("./data").ExpenseMethod; label: string }[] = [
+  { id: "cash", label: "Cash" },
+  { id: "card", label: "Card" },
+  { id: "check", label: "Check" },
+  { id: "bank", label: "Bank transfer" },
+  { id: "other", label: "Other" },
 ];
 
 export const DEFAULT_SETTINGS: Settings = {

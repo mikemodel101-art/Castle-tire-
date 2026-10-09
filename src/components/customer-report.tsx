@@ -6,7 +6,6 @@ import { Check, CheckCircle2, ChevronLeft, ChevronRight, Clock, FileText, MapPin
 import { CastleLogo, ShopIcon } from "@/components/brand";
 import { InspectionSheet } from "@/components/inspection-sheet";
 import { LightChip, SolidChip } from "@/components/ui";
-import { SECTION_EXPLAINERS } from "@/lib/help";
 import {
   CORNERS,
   GRADE_LABEL,
@@ -187,14 +186,6 @@ function ReportBody({ code }: { code: string }) {
           </div>
         </section>
 
-        <section className="anim-fade-up rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <h2 className="text-base font-bold text-slate-950">How to read this report</h2>
-          <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            Green means the item looks good. Yellow means the shop recommends planning the repair soon. Red means the item should be repaired now.
-            Tap any section below to see more detail and the technician's photos.
-          </p>
-        </section>
-
         <div id="details" className="scroll-mt-20 space-y-4">
           {SUMMARY_ORDER.filter((sec) => showAll || open === sec).map((sec) => (
             <DetailSection key={sec} sec={sec} ins={ins} s={s} media={media.filter((m) => m.section === sec)} />
@@ -294,7 +285,6 @@ function DetailSection({ sec, ins, s, media }: { sec: Section; ins: Inspection; 
       </div>
 
       <div className="space-y-3 px-5 py-4 text-sm">
-        <p className="rounded-xl bg-slate-50 p-3 text-slate-600 ring-1 ring-slate-200">{SECTION_EXPLAINERS[sec].customerText}</p>
         {sec === "tires" && (
           <>
             <div className="grid grid-cols-2 gap-2">

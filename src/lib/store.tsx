@@ -3,7 +3,7 @@
 import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
 import type {
   Estimate,
-  ExpenseEntry,
+  ExpenseTransaction,
   Inspection,
   Job,
   JobStatus,
@@ -13,52 +13,81 @@ import type {
   Settings,
   ShopState,
 } from "./data";
-import { STORE_VERSION, createSeed } from "./seed";
+import { createSeed } from "./seed";
+import { DEMO_STORAGE_KEY, LEGACY_DEMO_STORAGE_KEY, DEMO_BACKUP_KEY, normalizeDemoState } from "./demo-storage";
 import {
   blankInspection,
   buildEstimateLines,
-  daysBetween,
   digits,
   formatPhone,
   initials,
   makeCode,
   nowISO,
-  shiftDates,
   statusIndex,
   todayISO,
 } from "./utils";
 
-// Demo persistence: the whole shop lives in localStorage (no database).
-const KEY = "castle-tire-demo-v3";
-
+// Demo persistence only: never open a database or depend on environment variables.
 let state: ShopState | null = null;
 const listeners = new Set<() => void>();
 let storageBound = false;
 let lastSaveOk = true;
+let persistenceNotice: "recovered" | "migrated" | "session" | null = null;
+
+function writeStorage(key: string, value: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    window.localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function backupDamagedSave(raw: string) {
+  try {
+    if (!window.localStorage.getItem(DEMO_BACKUP_KEY)) writeStorage(DEMO_BACKUP_KEY, raw);
+  } catch {
+    // Restricted storage must not stop the in-memory demo from running.
+  }
+}
+
+function decodeSave(raw: string): ShopState {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    parsed = null;
+  }
+  const normalized = normalizeDemoState(parsed, todayISO());
+  if (normalized.repaired) {
+    backupDamagedSave(raw);
+    persistenceNotice = "recovered";
+  } else if (normalized.migrated) {
+    persistenceNotice = "migrated";
+  }
+  if (normalized.repaired || normalized.migrated) {
+    lastSaveOk = writeStorage(DEMO_STORAGE_KEY, JSON.stringify(normalized.state));
+    if (!lastSaveOk) persistenceNotice = "session";
+  }
+  return normalized.state;
+}
 
 function load(): ShopState {
-  const today = todayISO();
+  if (typeof window === "undefined") return createSeed(todayISO());
   try {
-    const raw = window.localStorage.getItem(KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as ShopState;
-      if (parsed && parsed.version === STORE_VERSION) {
-        // Session-only blob URLs (videos) can't survive a reload.
-        const cleaned: ShopState = { ...parsed, media: parsed.media.filter((m) => !m.url.startsWith("blob:")) };
-        if (cleaned.anchorDay !== today) {
-          const diff = daysBetween(cleaned.anchorDay, today);
-          return { ...shiftDates(cleaned, diff), anchorDay: today };
-        }
-        return cleaned;
-      }
-    }
+    const raw = window.localStorage.getItem(DEMO_STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_DEMO_STORAGE_KEY);
+    return raw ? decodeSave(raw) : createSeed(todayISO());
   } catch {
-    // corrupt storage: fall back to fresh demo data
+    lastSaveOk = false;
+    persistenceNotice = "session";
+    return createSeed(todayISO());
   }
-  return createSeed(today);
 }
 
 function getSnapshot(): ShopState {
+  // Never cache a visitor's state in the server process or touch window during SSR.
+  if (typeof window === "undefined") return createSeed(todayISO());
   if (!state) state = load();
   return state;
 }
@@ -78,13 +107,11 @@ function flush() {
     clearTimeout(saveTimer);
     saveTimer = null;
   }
-  if (!state) return;
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(state));
-    lastSaveOk = true;
-  } catch {
-    lastSaveOk = false;
-  }
+  if (!state || typeof window === "undefined") return;
+  const previous = lastSaveOk;
+  lastSaveOk = writeStorage(DEMO_STORAGE_KEY, JSON.stringify(state));
+  if (!lastSaveOk) persistenceNotice = "session";
+  if (previous !== lastSaveOk) emit();
 }
 
 function scheduleSave() {
@@ -96,13 +123,10 @@ function bindStorage() {
   if (storageBound || typeof window === "undefined") return;
   storageBound = true;
   window.addEventListener("storage", (e) => {
-    if (e.key !== KEY || !e.newValue) return;
-    try {
-      state = JSON.parse(e.newValue) as ShopState;
-      emit();
-    } catch {
-      // ignore
-    }
+    if (e.key !== DEMO_STORAGE_KEY && e.key !== null) return;
+    // Validate cross-tab writes too: another tab can contain an old/partial save.
+    state = e.newValue ? decodeSave(e.newValue) : createSeed(todayISO());
+    emit();
   });
   window.addEventListener("pagehide", flush);
   document.addEventListener("visibilitychange", () => {
@@ -126,6 +150,23 @@ function setState(fn: (s: ShopState) => ShopState) {
 }
 
 export const storageHealthy = () => lastSaveOk;
+
+export function usePersistenceNotice() {
+  return useSyncExternalStore(subscribe, () => persistenceNotice, () => null);
+}
+
+export function dismissPersistenceNotice() {
+  persistenceNotice = null;
+  emit();
+}
+
+export function getRecoveryBackup(): string | null {
+  try {
+    return window.localStorage.getItem(DEMO_BACKUP_KEY);
+  } catch {
+    return null;
+  }
+}
 
 /** Null during server render / hydration, then the live shop state. */
 export function useShopState(): ShopState | null {
@@ -464,23 +505,6 @@ export function sendMessage(customerId: string, body: string, by: string, jobId?
   }));
 }
 
-export function addExpense(entry: Omit<ExpenseEntry, "id">): string {
-  let id = "";
-  setState((s) => {
-    id = `x${s.seq + 1}`;
-    return { ...s, seq: s.seq + 1, expenses: [{ ...entry, id }, ...s.expenses] };
-  });
-  return id;
-}
-
-export function updateExpense(id: string, patch: Partial<ExpenseEntry>) {
-  setState((s) => ({ ...s, expenses: s.expenses.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
-}
-
-export function removeExpense(id: string) {
-  setState((s) => ({ ...s, expenses: s.expenses.filter((x) => x.id !== id) }));
-}
-
 export function addMedia(m: Omit<Media, "id">): string {
   let id = "";
   setState((s) => {
@@ -506,6 +530,23 @@ export function addTeamMember(name: string, role: string): Member {
   const member: Member = { id: `t${Date.now()}`, name: name.trim(), role: role.trim() || "Technician", initials: initials(name) };
   setState((s) => ({ ...s, team: [...s.team, member] }));
   return member;
+}
+
+export function addExpense(input: Omit<ExpenseTransaction, "id">): string {
+  let id = "";
+  setState((s) => {
+    id = `x${s.seq + 1}`;
+    return { ...s, seq: s.seq + 1, expenses: [{ ...input, id }, ...s.expenses] };
+  });
+  return id;
+}
+
+export function updateExpense(id: string, patch: Partial<ExpenseTransaction>) {
+  setState((s) => ({ ...s, expenses: s.expenses.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
+}
+
+export function removeExpense(id: string) {
+  setState((s) => ({ ...s, expenses: s.expenses.filter((x) => x.id !== id) }));
 }
 
 export function resetDemo() {

@@ -8,16 +8,8 @@ export const metadata: Metadata = {
     template: "%s · Castle Tire Shop",
   },
   description:
-    "Castle Tire Shop daily operations: jobs, digital inspections, media capture, estimates, customer history and public reports.",
+    "Castle Tire Shop daily operations: jobs, digital vehicle inspections, photos and videos, and customer reports.",
   applicationName: "Castle Tire Shop",
-  keywords: [
-    "tire shop software",
-    "auto repair saas",
-    "digital vehicle inspections",
-    "repair shop dashboard",
-    "customer vehicle history",
-    "inspection reports",
-  ],
   appleWebApp: {
     capable: true,
     title: "Castle Tire",
